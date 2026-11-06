@@ -1,26 +1,35 @@
 {
-  "name": "makehappen-app",
+  "name": "makehappen",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node --env-file=.env.local --import tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/utilities": "^3.2.2",
+    "bcryptjs": "^3.0.3",
+    "mongoose": "^9.12.0",
     "next": "16.4.5",
+    "next-auth": "^5.0.0-beta.32",
+    "nodemailer": "^8.0.11",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
