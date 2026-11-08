@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { PageFallback } from "@/components/banner";
-import { AssignForm, CommentForm, StatusForm } from "@/components/task-forms";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { AssignForm, CommentForm, EditTaskForm, StatusForm } from "@/components/task-forms";
+import { formatDate, formatDateTime, isOverdue, toDateInput } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { getTaskDetail } from "@/services/tasks";
 
@@ -26,6 +26,7 @@ async function TaskScreen({ params }: { params: Promise<{ id: string; taskId: st
           <div className="row">
             <span className={`status status-${task.status}`}>{task.statusLabel}</span>
             <span className="muted">{task.teamName}</span>
+            {isOverdue(task.dueDate, task.status) ? <span className="badge badge-overdue">Overdue</span> : null}
           </div>
           <h2 style={{ margin: 0 }}>{task.title}</h2>
           <p className="muted">
@@ -38,6 +39,23 @@ async function TaskScreen({ params }: { params: Promise<{ id: string; taskId: st
           ) : null}
           <Link href={`/events/${task.eventId}/board`}>Back to the board</Link>
         </article>
+
+        {task.canEdit ? (
+          <details className="disclosure">
+            <summary className="btn btn-ghost" style={{ fontSize: "0.88rem" }}>Edit task</summary>
+            <div style={{ marginTop: "0.75rem", padding: "1.25rem", background: "white", borderRadius: "14px", border: "1px solid var(--line)" }}>
+              <EditTaskForm
+                key={`${task.title}|${task.description}|${task.dueDate ?? ""}|${task.teamId}|${task.status}`}
+                taskId={task.id}
+                title={task.title}
+                description={task.description}
+                dueDate={task.dueDate ? toDateInput(task.dueDate) : ""}
+                teamId={task.teamId}
+                teams={task.canChangeTeam ? task.teams : null}
+              />
+            </div>
+          </details>
+        ) : null}
 
         {task.canChangeStatus && task.status !== "backlog" ? (
           <article className="panel stack">
@@ -55,7 +73,6 @@ async function TaskScreen({ params }: { params: Promise<{ id: string; taskId: st
 
         <article className="panel stack">
           <h2 style={{ margin: 0 }}>Comments</h2>
-          <p className="hint">A comment is a note for the people on this task.</p>
           {task.comments.length === 0 ? <p className="muted">No comments yet.</p> : task.comments.map((comment) => (
             <div key={comment.id} className="comment">
               <strong>{comment.authorName}</strong>
@@ -69,7 +86,6 @@ async function TaskScreen({ params }: { params: Promise<{ id: string; taskId: st
 
       <aside className="panel">
         <h2>Activity</h2>
-        <p className="hint">Activity is the record of assignments, status reasons, and comments.</p>
         {task.activity.length === 0 ? <p className="muted">No activity yet.</p> : (
           <ol className="activity-list">
             {task.activity.map((entry) => (

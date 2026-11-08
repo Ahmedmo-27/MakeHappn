@@ -33,22 +33,25 @@ async function Teams({
       <Banner error={flash.error} notice={flash.notice} />
       <header className="page-header">
         <div>
-          <p className="kicker">Studio</p>
-          <h1>Teams</h1>
-          <p className="lede">Each team has one leader and any number of members. Make leader replaces the current leader. The previous leader stays on the team as a member.</p>
+          <p className="kicker">Studio Organization</p>
+          <h1 className="title-compact">Lanes & Operating Structure</h1>
+          <p className="lede">
+            A multidisciplinary team built around three connected functions — Vision & Design, Project & Delivery, and Communication.
+            &ldquo;Everyone has a lane · Projects move across lanes · Ownership is clear at every handover.&rdquo;
+          </p>
         </div>
       </header>
-      <form action={createTeamAction} className="row panel">
+      <form action={createTeamAction} className="row card form-card" style={{ maxWidth: "640px", alignItems: "flex-end", gap: "0.85rem" }}>
         <label className="field" style={{ flex: 1 }}>
-          <span>New team</span>
-          <input className="input" name="name" required placeholder="Design" />
+          <span>New team / studio lane</span>
+          <input className="input" name="name" required placeholder="e.g. Vision & Design" />
         </label>
-        <SubmitButton>Add team</SubmitButton>
+        <SubmitButton>Add lane</SubmitButton>
       </form>
-      <div className="stack" style={{ marginTop: "1rem" }}>
+      <div className="stack" style={{ marginTop: "1.25rem" }}>
         {teams.map((team) => (
-          <article key={team.id} className="panel">
-            <form action={renameTeamAction} className="row">
+          <article key={team.id} className="card stack" style={{ gap: "0.85rem" }}>
+            <form action={renameTeamAction} className="row" style={{ alignItems: "flex-end", gap: "0.75rem" }}>
               <input type="hidden" name="teamId" value={team.id} />
               <label className="field" style={{ flex: 1 }}>
                 <span>Name</span>

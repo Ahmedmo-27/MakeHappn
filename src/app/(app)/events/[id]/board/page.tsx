@@ -34,17 +34,9 @@ async function BoardScreen({
 
   return (
     <div className="stack">
-      <p className="hint">Drag a card to change its status. A reason is required before the move is saved. Backlog is not a column. It is the list of tasks that do not have a person yet.</p>
       {user.role === "member" ? (
-        <p className="hint">A card without a drag handle belongs to someone else. You can move only tasks assigned to you.</p>
+        <p className="hint">You can move only tasks assigned to you.</p>
       ) : null}
-      <dl className="legend">
-        <div><dt>To Do</dt><dd>Assigned and ready to start.</dd></div>
-        <div><dt>In Progress</dt><dd>Someone is doing it now.</dd></div>
-        <div><dt>In Review</dt><dd>Waiting for a check.</dd></div>
-        <div><dt>Blocked</dt><dd>Stuck. The reason says why.</dd></div>
-        <div><dt>Done</dt><dd>Finished.</dd></div>
-      </dl>
       {user.role === "owner" ? (
         <div className="pills">
           <Link className={!teamFilter ? "pill active" : "pill"} href={`/events/${event.id}/board`}>All teams</Link>

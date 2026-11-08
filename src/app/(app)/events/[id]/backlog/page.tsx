@@ -4,7 +4,7 @@ import { createTaskAction } from "@/app/actions/tasks";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { AssignForm } from "@/components/task-forms";
-import { formatDate, readMessage } from "@/lib/format";
+import { formatDate, isOverdue, readMessage } from "@/lib/format";
 import { canAssignTask } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { listBacklog } from "@/services/tasks";
@@ -38,9 +38,11 @@ async function Backlog({
     <div className="stack">
       <Banner error={flash.error} notice={flash.notice} />
       {user.role === "owner" ? (
-        <form action={createTaskAction} className="panel form-grid">
-          <h2 style={{ margin: 0 }}>Add to the backlog</h2>
-          <p className="hint">A new task belongs to a team and has no person yet. The team leader assigns someone, which moves it to To Do.</p>
+        <form action={createTaskAction} className="card form-card form-grid" style={{ maxWidth: "720px" }}>
+          <div className="form-header">
+            <h2 className="form-title">Add to the backlog</h2>
+            <p className="form-subtitle">A new task belongs to a team and has no person yet. The team leader assigns someone, which moves it to To Do.</p>
+          </div>
           <input type="hidden" name="eventId" value={event.id} />
           <label className="field">
             <span>Title</span>
@@ -63,7 +65,9 @@ async function Backlog({
               <input className="input" type="date" name="dueDate" />
             </label>
           </div>
-          <SubmitButton>Add task</SubmitButton>
+          <div className="form-actions">
+            <SubmitButton>Add task</SubmitButton>
+          </div>
         </form>
       ) : null}
 
@@ -95,6 +99,7 @@ async function Backlog({
                   <div className="row">
                     <h3 style={{ margin: 0 }}><Link href={`/events/${event.id}/tasks/${task.id}`}>{task.title}</Link></h3>
                     {task.dueDate ? <span className="muted">Due {formatDate(task.dueDate)}</span> : null}
+                    {isOverdue(task.dueDate, "backlog") ? <span className="badge badge-overdue">Overdue</span> : null}
                   </div>
                   {task.description ? <p className="prose muted">{task.description}</p> : null}
                   {canAssignTask(user, team.id) ? (

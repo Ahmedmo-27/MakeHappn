@@ -42,10 +42,6 @@ async function Performance({
 
   return (
     <div className="stack">
-      <p className="lede">
-        Done percentage is done tasks divided by every task in scope. A person is scored only on tasks assigned to them. A team score also includes unassigned backlog. Zero tasks shows 0%, so a light workload is obvious.
-      </p>
-      <p className="hint">Done is the percent. Workload is how many of those tasks are done. Statuses is the mix.</p>
       {user.role === "owner" && !focus ? (
         <div className="card-grid">
           {stats.map((team) => (
@@ -57,7 +53,6 @@ async function Performance({
               <Meter counts={team.counts} />
               <CountLine counts={team.counts} />
               <Link className="btn btn-ghost" href={`/events/${event.id}/performance?team=${team.teamId}`}>View members</Link>
-              <p className="hint">Opens this team&apos;s people and their scores.</p>
             </article>
           ))}
         </div>
