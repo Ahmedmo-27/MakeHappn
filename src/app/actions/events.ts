@@ -7,7 +7,7 @@ import { assertName, field, fieldList } from "@/lib/parse";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { getCurrentUser, requireOwner } from "@/lib/session";
-import { addTeamToEvent, createEvent, notifyPendingTeams } from "@/services/events";
+import { addTeamToEvent, createEvent, notifyPendingTeams, updateEvent } from "@/services/events";
 
 export async function createEventAction(
   _prev: ActionResult | null,
@@ -38,6 +38,31 @@ export async function createEventAction(
     return { ok: false, error: messageOf(error) };
   }
   redirectWith(`/events/${eventId}/backlog`, { notice });
+}
+
+export async function updateEventAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const actor = await requireOwner();
+    const start = parseDateInput(field(formData, "start"));
+    const end = parseDateInput(field(formData, "end"));
+    if (!start || !end) return { ok: false, error: "Choose a start and end date" };
+    await updateEvent({
+      actor,
+      eventId: field(formData, "eventId"),
+      name: assertName(field(formData, "name"), "Experience name", 120),
+      typeId: field(formData, "typeId"),
+      start,
+      end,
+    });
+    refresh();
+    return { ok: true, notice: "Experience updated" };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { ok: false, error: messageOf(error) };
+  }
 }
 
 export async function addTeamAction(formData: FormData) {

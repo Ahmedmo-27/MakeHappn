@@ -28,6 +28,7 @@ export async function createPersonAction(
     await createPerson({
       name: assertName(field(formData, "name"), "Name"),
       email: assertEmail(field(formData, "email")),
+      title: field(formData, "title"),
       password: assertPassword(String(formData.get("password") ?? "")),
       role: roleValue,
       teamId: roleValue === "owner" ? null : field(formData, "teamId") || null,
@@ -53,6 +54,7 @@ export async function updatePersonAction(
       id: field(formData, "id"),
       name: assertName(field(formData, "name"), "Name"),
       email: assertEmail(field(formData, "email")),
+      title: field(formData, "title"),
       password: password ? assertPassword(password) : undefined,
       role: roleValue,
       teamId: roleValue === "owner" ? null : field(formData, "teamId") || null,
