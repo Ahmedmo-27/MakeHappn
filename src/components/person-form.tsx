@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { createPersonAction, updatePersonAction } from "@/app/actions/org";
 import type { Role } from "@/lib/domain";
 import type { ActionResult } from "@/lib/result";
+import { PasswordInput } from "@/components/password-input";
 import { SubmitButton } from "@/components/submit-button";
 
 type TeamOption = { id: string; name: string; leaderId: string | null };
@@ -13,7 +14,7 @@ export function PersonForm({
   person,
 }: {
   teams: TeamOption[];
-  person?: { id: string; name: string; email: string; role: Role; teamId: string | null };
+  person?: { id: string; name: string; email: string; title?: string; role: Role; teamId: string | null };
 }) {
   const action = person ? updatePersonAction : createPersonAction;
   const [state, formAction] = useActionState(action, null as ActionResult | null);
@@ -31,12 +32,16 @@ export function PersonForm({
         <input className="input" name="name" defaultValue={person?.name} required />
       </label>
       <label className="field">
+        <span>Job Title / Functional Role</span>
+        <input className="input" name="title" defaultValue={person?.title} placeholder="e.g. Creative Lead, Project & Delivery Lead" />
+      </label>
+      <label className="field">
         <span>Email</span>
         <input className="input" name="email" type="email" defaultValue={person?.email} required />
       </label>
       <label className="field">
         <span>{person ? "New password" : "Password"}</span>
-        <input className="input" name="password" type="password" minLength={person ? undefined : 8} required={!person} autoComplete="new-password" />
+        <PasswordInput autoComplete="new-password" required={!person} minLength={person ? undefined : 8} />
         <p className="hint">{person ? "Leave this blank to keep the current password. A new password is what they will use to sign in." : "This is the password they use to sign in."}</p>
       </label>
       <label className="field">
@@ -67,7 +72,9 @@ export function PersonForm({
       ) : null}
       {leaderTaken ? <p className="banner banner-error">That team already has a leader. Promote someone from the Teams page instead, or pick another team.</p> : null}
       {state && !state.ok ? <p className="banner banner-error">{state.error}</p> : null}
-      <SubmitButton>{person ? "Save person" : "Add person"}</SubmitButton>
+      <div className="form-actions">
+        <SubmitButton>{person ? "Save person" : "Add person"}</SubmitButton>
+      </div>
     </form>
   );
 }

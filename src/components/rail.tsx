@@ -8,9 +8,12 @@ import { logout } from "@/app/actions/auth";
 
 const links = [
   { href: "/dashboard", label: "Dashboard", ownerOnly: false },
+  { href: "/projects", label: "Projects", ownerOnly: false },
+  { href: "/sales", label: "Sales & Pipeline", ownerOnly: false },
+  { href: "/collective", label: "Collective", ownerOnly: false },
+  { href: "/reports", label: "Reports", ownerOnly: false },
   { href: "/people", label: "People", ownerOnly: true },
-  { href: "/teams", label: "Teams", ownerOnly: true },
-  { href: "/event-types", label: "Experience types", ownerOnly: true },
+  { href: "/teams", label: "Lanes & Teams", ownerOnly: true },
 ];
 
 export function Rail({ user }: { user: SessionUser }) {
@@ -18,7 +21,7 @@ export function Rail({ user }: { user: SessionUser }) {
   return (
     <aside className="rail">
       <div>
-        <p className="brand-kicker">Experiential studio</p>
+        <p className="brand-kicker">Creative Studio OS</p>
         <Link href="/dashboard" className="brand wordmark">makehappn.</Link>
       </div>
       <nav className="rail-nav">

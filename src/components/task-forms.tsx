@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { assignTaskAction, changeTaskStatusForm, commentAction } from "@/app/actions/tasks";
+import { assignTaskAction, changeTaskStatusForm, commentAction, updateTaskAction } from "@/app/actions/tasks";
 import { BOARD_STATUSES, STATUS_LABEL, type TaskStatus } from "@/lib/domain";
 import type { ActionResult } from "@/lib/result";
 import { SubmitButton } from "@/components/submit-button";
@@ -32,8 +32,8 @@ export function AssignForm({
         </select>
         <p className="hint">
           {leavingBacklog
-            ? "Choosing a person moves this task from Backlog to To Do. That is a status change, so a reason is required."
-            : "Reassigning does not change the status, so no reason is required. The change is still recorded."}
+            ? "Choosing a person moves this task from Backlog to To Do, so a reason is required."
+            : "Reassigning does not change the status, so no reason is required."}
         </p>
       </label>
       {leavingBacklog ? (
@@ -44,7 +44,60 @@ export function AssignForm({
       ) : null}
       {state && !state.ok ? <p className="banner banner-error">{state.error}</p> : null}
       {state?.ok && state.notice ? <p className="banner banner-ok">{state.notice}</p> : null}
-      <SubmitButton>{leavingBacklog ? "Assign and move to To Do" : "Reassign"}</SubmitButton>
+      <div className="form-actions">
+        <SubmitButton>{leavingBacklog ? "Assign and move to To Do" : "Reassign"}</SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+export function EditTaskForm({
+  taskId,
+  title,
+  description,
+  dueDate,
+  teamId,
+  teams,
+}: {
+  taskId: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  teamId: string;
+  teams: { id: string; name: string }[] | null;
+}) {
+  const [state, action] = useActionState(updateTaskAction, null as ActionResult | null);
+  return (
+    <form action={action} className="form-grid">
+      <input type="hidden" name="taskId" value={taskId} />
+      <label className="field">
+        <span>Title</span>
+        <input className="input" name="title" required defaultValue={title} />
+      </label>
+      <label className="field">
+        <span>Description</span>
+        <textarea className="textarea" name="description" defaultValue={description} />
+      </label>
+      <label className="field">
+        <span>Due date</span>
+        <input className="input" type="date" name="dueDate" defaultValue={dueDate} />
+        <p className="hint">Leave the date empty to clear it.</p>
+      </label>
+      {teams ? (
+        <label className="field">
+          <span>Team</span>
+          <select className="select" name="teamId" defaultValue={teamId}>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>{team.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {state && !state.ok ? <p className="banner banner-error">{state.error}</p> : null}
+      {state?.ok && state.notice ? <p className="banner banner-ok">{state.notice}</p> : null}
+      <div className="form-actions">
+        <SubmitButton>Save task</SubmitButton>
+      </div>
     </form>
   );
 }
@@ -65,11 +118,12 @@ export function StatusForm({ taskId, status }: { taskId: string; status: TaskSta
       <label className="field">
         <span>Reason</span>
         <textarea className="textarea" name="reason" required placeholder="Why the status is changing" />
-        <p className="hint">A blank reason is refused. The reason is kept in the task history.</p>
       </label>
       {state && !state.ok ? <p className="banner banner-error">{state.error}</p> : null}
       {state?.ok ? <p className="banner banner-ok">Status updated</p> : null}
-      <SubmitButton>Update status</SubmitButton>
+      <div className="form-actions">
+        <SubmitButton>Update status</SubmitButton>
+      </div>
     </form>
   );
 }
@@ -82,10 +136,11 @@ export function CommentForm({ taskId, commentCount }: { taskId: string; commentC
       <label className="field">
         <span>Comment</span>
         <textarea className="textarea" name="body" required placeholder="Add a note for the team" />
-        <p className="hint">A comment is a note. It does not change the status.</p>
       </label>
       {state && !state.ok ? <p className="banner banner-error">{state.error}</p> : null}
-      <SubmitButton>Add comment</SubmitButton>
+      <div className="form-actions">
+        <SubmitButton>Add comment</SubmitButton>
+      </div>
     </form>
   );
 }

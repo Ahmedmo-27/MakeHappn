@@ -19,7 +19,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { changeTaskStatusAction } from "@/app/actions/tasks";
 import { BOARD_STATUSES, STATUS_LABEL, isBoardStatus, type BoardStatus } from "@/lib/domain";
-import { formatDate } from "@/lib/format";
+import { formatDate, isOverdue } from "@/lib/format";
 import type { BoardTask } from "@/lib/board";
 
 export function Board({ eventId, tasks, showTeam }: { eventId: string; tasks: BoardTask[]; showTeam: boolean }) {
@@ -137,6 +137,7 @@ function Card({ task, eventId, showTeam }: { task: BoardTask; eventId: string; s
         <span>{task.assigneeName}</span>
         <span>{task.dueDate ? formatDate(task.dueDate) : "No due date"}</span>
       </div>
+      {isOverdue(task.dueDate, task.status) ? <span className="badge badge-overdue">Overdue</span> : null}
     </article>
   );
 }
@@ -166,7 +167,7 @@ function ReasonDialog({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <h2 id="reason-title">{title}</h2>
-        <p className="hint">Move to {fromTo}. A blank reason is refused, and the reason is kept in the task history.</p>
+        <p className="hint">Move to {fromTo}.</p>
         <label className="field">
           <span>Reason</span>
           <textarea className="textarea" value={reason} onChange={(event) => setReason(event.target.value)} autoFocus required />
