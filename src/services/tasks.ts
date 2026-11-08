@@ -6,13 +6,17 @@ import {
   STATUS_LABEL,
   type BoardStatus,
   type TaskStatus,
+  type ProjectStage,
 } from "@/lib/domain";
 import { connectDB } from "@/lib/db";
+import { formatDate } from "@/lib/format";
 import { isObjectId, sameId, toObjectId } from "@/lib/ids";
+import { sendTaskAssignedEmail } from "@/lib/mail";
 import {
   canAssignTask,
   canChangeTaskStatus,
   canCommentOnTask,
+  canEditTask,
   type SessionUser,
 } from "@/lib/permissions";
 import { Activity } from "@/models/Activity";
@@ -59,7 +63,10 @@ export async function listOpenTasks(userId: string) {
   })
     .sort({ dueDate: 1 })
     .limit(12);
-  const events = await Event.find({ _id: { $in: tasks.map((task) => task.eventId) } }).select("name");
+  const eventIds = tasks
+    .map((task) => task.eventId)
+    .filter((id): id is NonNullable<typeof id> => Boolean(id));
+  const events = await Event.find({ _id: { $in: eventIds } }).select("name");
   const names = new Map(events.map((event) => [String(event._id), event.name]));
   return tasks.flatMap((task) => {
     if (!isTaskStatus(task.status)) return [];
@@ -190,7 +197,111 @@ export async function assignTask(input: {
       reason,
     });
   }
-  return event.id;
+
+  if (String(person._id) === input.actor.id) return "Task assigned";
+  const mailed = await sendTaskAssignedEmail({
+    to: person.email,
+    assigneeName: person.name,
+    taskTitle: task.title,
+    eventName: event.name,
+    dueDate: task.dueDate,
+    taskPath: `/events/${event.id}/tasks/${task._id}`,
+  });
+  if (mailed.sent) return `Task assigned. ${person.name} was emailed.`;
+  const reasonText = mailed.error ? `: ${mailed.error}` : "";
+  return `Task assigned. Email to ${person.name} was not sent${reasonText}.`;
+}
+
+function joinList(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+export async function updateTask(input: {
+  actor: SessionUser;
+  taskId: string;
+  title: string;
+  description: string;
+  dueDate: Date | null;
+  teamId?: string;
+}) {
+  const task = await loadTask(input.taskId);
+  const { event } = await getAccessibleEvent(String(task.eventId));
+  if (!canEditTask(input.actor, String(task.teamId))) {
+    throw new Error("You cannot edit this task");
+  }
+  const previous = {
+    title: task.title,
+    description: task.description,
+    dueDate: task.dueDate,
+    teamId: task.teamId,
+  };
+
+  const title = input.title.trim();
+  if (!title) throw new Error("Title is required");
+  if (title.length > 160) throw new Error("Title must be 160 characters or less");
+  const description = input.description.trim();
+  if (description.length > 8000) throw new Error("Description is too long");
+
+  const edited: string[] = [];
+  const cleared: string[] = [];
+  if (title !== task.title) {
+    edited.push("the title");
+    task.title = title;
+  }
+  if (description !== task.description) {
+    edited.push("the description");
+    task.description = description;
+  }
+
+  const nextDue = input.dueDate?.getTime() ?? null;
+  const currentDue = task.dueDate?.getTime() ?? null;
+  if (nextDue !== currentDue) {
+    if (input.dueDate) edited.push(`the due date to ${formatDate(input.dueDate)}`);
+    else cleared.push("the due date");
+    task.dueDate = input.dueDate;
+  }
+
+  const nextTeamId = input.teamId?.trim() ?? "";
+  if (nextTeamId && nextTeamId !== String(task.teamId)) {
+    if (input.actor.role !== "owner") throw new Error("Only the owner can change the team");
+    if (task.status !== "backlog") {
+      throw new Error("The team can change only while the task is in the backlog");
+    }
+    if (!event.teamIds.includes(nextTeamId)) {
+      throw new Error("Assign the task to a team on this event");
+    }
+    const team = await Team.findById(nextTeamId);
+    if (!team) throw new Error("That team no longer exists");
+    edited.push(`the team to ${team.name}`);
+    task.teamId = team._id;
+  }
+
+  if (edited.length === 0 && cleared.length === 0) {
+    return { notice: "Nothing changed" };
+  }
+
+  await task.save();
+  const parts: string[] = [];
+  if (edited.length > 0) parts.push(`changed ${joinList(edited)}`);
+  if (cleared.length > 0) parts.push(`cleared ${joinList(cleared)}`);
+  try {
+    await Activity.create({
+      taskId: task._id,
+      eventId: task.eventId,
+      actorId: toObjectId(input.actor.id),
+      type: "edit",
+      detail: parts.join(" and "),
+    });
+  } catch (error) {
+    task.title = previous.title;
+    task.description = previous.description;
+    task.dueDate = previous.dueDate;
+    task.teamId = previous.teamId;
+    await task.save();
+    throw error;
+  }
+  return { notice: "Task updated" };
 }
 
 export async function updateTaskStatus(input: {
@@ -305,6 +416,9 @@ export type TaskDetail = {
   dueDate: string | null;
   canAssign: boolean;
   canChangeStatus: boolean;
+  canEdit: boolean;
+  canChangeTeam: boolean;
+  teams: { id: string; name: string }[];
   roster: { id: string; name: string; role: string }[];
   comments: { id: string; body: string; authorName: string; createdAt: string }[];
   activity: { id: string; text: string; createdAt: string }[];
@@ -355,6 +469,9 @@ export async function getTaskDetail(eventId: string, taskId: string, user: Sessi
       teamId: String(task.teamId),
       assigneeId: task.assigneeId ? String(task.assigneeId) : null,
     }),
+    canEdit: canEditTask(user, String(task.teamId)),
+    canChangeTeam: user.role === "owner" && task.status === "backlog",
+    teams: event.teams.map((team) => ({ id: team.id, name: team.name })),
     roster,
     comments: comments.map((comment) => ({
       id: String(comment._id),
@@ -379,6 +496,7 @@ function describeActivity(
     reason?: string;
     fromAssigneeId?: unknown;
     toAssigneeId?: unknown;
+    detail?: string;
   },
   nameOf: (id: unknown, fallback?: string) => string,
 ): string {
@@ -390,5 +508,112 @@ function describeActivity(
     return `${actor} assigned this from ${nameOf(entry.fromAssigneeId, "Unassigned")} to ${nameOf(entry.toAssigneeId)}`;
   }
   if (entry.type === "comment") return `${actor} commented`;
+  if (entry.type === "edit") return `${actor} ${entry.detail || "updated this task"}.`;
   return `${actor} updated this task`;
+}
+
+export async function listProjectBoardTasks(projectId: string) {
+  await connectDB();
+  const [tasks, users, teams] = await Promise.all([
+    Task.find({ projectId: toObjectId(projectId) })
+      .populate("accountableOwnerId", "name title")
+      .populate("collaboratorIds", "name title")
+      .populate("teamId", "name")
+      .sort({ createdAt: -1 })
+      .lean(),
+    User.find().select("name email title role functionalRoles").sort({ name: 1 }).lean(),
+    Team.find().select("name").sort({ name: 1 }).lean(),
+  ]);
+
+  return {
+    tasks: tasks.map((t) => ({
+      id: String(t._id),
+      title: t.title,
+      description: t.description,
+      status: t.status,
+      priority: t.priority ?? "medium",
+      stage: t.stage ?? null,
+      taskCategory: t.taskCategory ?? "deliverable_prerequisite",
+      isGatePrerequisite: t.isGatePrerequisite ?? true,
+      dueDate: t.dueDate ? t.dueDate.toISOString() : null,
+      laneName: (t.teamId as unknown as { name?: string })?.name ?? "General",
+      owner: t.accountableOwnerId as unknown as { _id?: unknown; name?: string; title?: string } | null,
+      collaborators: (t.collaboratorIds as unknown as Array<{ _id?: unknown; name?: string }>) ?? [],
+    })),
+    roster: users.map((u) => ({
+      id: String(u._id),
+      name: u.name,
+      title: u.title ?? "",
+      role: u.role,
+    })),
+    lanes: teams.map((team) => ({
+      id: String(team._id),
+      name: team.name,
+    })),
+  };
+}
+
+export async function createProjectTask(input: {
+  projectId: string;
+  stage?: string | null;
+  laneId: string;
+  accountableOwnerId: string;
+  collaboratorIds?: string[];
+  title: string;
+  description?: string;
+  dueDate?: Date | null;
+  priority?: "urgent" | "high" | "medium" | "low";
+  taskCategory?: "deliverable_prerequisite" | "continuous_support" | "operational_internal";
+  isGatePrerequisite?: boolean;
+}) {
+  await connectDB();
+  if (!input.title || input.title.trim().length === 0) {
+    throw new Error("Task title is required");
+  }
+
+  const ownerId = toObjectId(input.accountableOwnerId);
+  const task = await Task.create({
+    projectId: toObjectId(input.projectId),
+    stage: (input.stage as ProjectStage) ?? undefined,
+    teamId: toObjectId(input.laneId),
+    accountableOwnerId: ownerId,
+    assigneeId: ownerId,
+    collaboratorIds: (input.collaboratorIds ?? []).map(toObjectId),
+    title: input.title.trim(),
+    description: input.description?.trim() ?? "",
+    dueDate: input.dueDate ?? null,
+    status: "todo",
+    priority: input.priority ?? "medium",
+    taskCategory: input.taskCategory ?? "deliverable_prerequisite",
+    isGatePrerequisite: input.isGatePrerequisite ?? true,
+    dependsOnTaskIds: [],
+  });
+
+  return task;
+}
+
+export async function moveProjectTaskStatus(
+  taskId: string,
+  newStatus: TaskStatus,
+  actorId: string,
+  reason?: string,
+) {
+  await connectDB();
+  const task = await Task.findById(taskId);
+  if (!task) throw new Error("Task not found");
+
+  const prevStatus = task.status;
+  task.status = newStatus;
+  await task.save();
+
+  await Activity.create({
+    taskId: task._id,
+    actorId: toObjectId(actorId),
+    type: "status",
+    fromStatus: prevStatus,
+    toStatus: newStatus,
+    reason: reason?.trim() || "Status updated on project board",
+  });
+
+  return task;
 }

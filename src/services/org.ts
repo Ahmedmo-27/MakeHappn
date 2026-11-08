@@ -44,6 +44,7 @@ export async function listPeople() {
       name: user.name,
       email: user.email,
       role: user.role,
+      title: user.title ?? "",
       teamId: user.teamId ? String(user.teamId) : null,
       teamName: user.teamId ? (teamName.get(String(user.teamId)) ?? "Unknown team") : null,
     })),
@@ -58,6 +59,7 @@ async function releaseLeadership(userId: string, teamId: string | null) {
 export async function createPerson(input: {
   name: string;
   email: string;
+  title?: string;
   password: string;
   role: Role;
   teamId: string | null;
@@ -68,8 +70,10 @@ export async function createPerson(input: {
     await User.create({
       name: input.name,
       email: input.email,
+      title: input.title ?? "",
       passwordHash: await bcrypt.hash(input.password, 12),
       role: "owner",
+      isExecutive: true,
       teamId: null,
     });
     return;
@@ -84,6 +88,7 @@ export async function createPerson(input: {
   const user = await User.create({
     name: input.name,
     email: input.email,
+    title: input.title ?? "",
     passwordHash: await bcrypt.hash(input.password, 12),
     role: input.role,
     teamId: team._id,
@@ -99,6 +104,7 @@ export async function updatePerson(input: {
   id: string;
   name: string;
   email: string;
+  title?: string;
   password?: string;
   role: Role;
   teamId: string | null;
@@ -136,6 +142,7 @@ export async function updatePerson(input: {
 
   user.name = input.name;
   user.email = input.email;
+  if (input.title !== undefined) user.title = input.title;
   user.role = input.role;
   user.teamId = nextTeamId ? toObjectId(nextTeamId) : null;
   if (input.password) user.passwordHash = await bcrypt.hash(input.password, 12);

@@ -1,5 +1,6 @@
 import "server-only";
 import { isTaskStatus, type Role } from "@/lib/domain";
+import { utcToday } from "@/lib/format";
 import { connectDB } from "@/lib/db";
 import { donePercent, emptyCounts, totalOf, type StatusCounts } from "@/lib/stats";
 import { Task } from "@/models/Task";
@@ -121,6 +122,23 @@ export async function summarizeEvents(eventIds: string[]) {
     if (!isTaskStatus(task.status)) continue;
     const counts = map.get(String(task.eventId));
     if (counts) counts[task.status] += 1;
+  }
+  return map;
+}
+
+export async function countOverdueByEvent(eventIds: string[]) {
+  const map = new Map<string, number>();
+  for (const id of eventIds) map.set(id, 0);
+  if (eventIds.length === 0) return map;
+  await connectDB();
+  const tasks = await Task.find({
+    eventId: { $in: eventIds },
+    dueDate: { $ne: null, $lt: utcToday() },
+    status: { $ne: "done" },
+  }).select("eventId");
+  for (const task of tasks) {
+    const id = String(task.eventId);
+    map.set(id, (map.get(id) ?? 0) + 1);
   }
   return map;
 }

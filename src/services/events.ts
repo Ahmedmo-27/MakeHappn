@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import { isObjectId, sameId, toObjectId } from "@/lib/ids";
 import { sendTeamAssignedEmail } from "@/lib/mail";
-import { canViewEvent } from "@/lib/permissions";
+import { canViewEvent, type SessionUser } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { Event } from "@/models/Event";
 import { EventType } from "@/models/EventType";
@@ -142,6 +142,34 @@ export async function createEvent(input: {
 
   const warnings = await notifyPendingTeams(String(event._id));
   return { id: String(event._id), warnings };
+}
+
+export async function updateEvent(input: {
+  actor: SessionUser;
+  eventId: string;
+  name: string;
+  typeId: string;
+  start: Date;
+  end: Date;
+}) {
+  if (input.actor.role !== "owner") throw new Error("Only the owner can edit an experience");
+  await connectDB();
+  if (!isObjectId(input.eventId)) throw new Error("Event not found");
+  if (input.end < input.start) throw new Error("The end date must be on or after the start date");
+  if (!isObjectId(input.typeId)) throw new Error("Choose an event type");
+
+  const [event, eventType] = await Promise.all([
+    Event.findById(input.eventId),
+    EventType.findById(input.typeId),
+  ]);
+  if (!event) throw new Error("Event not found");
+  if (!eventType) throw new Error("Choose an event type");
+
+  event.name = input.name;
+  event.typeId = eventType._id;
+  event.start = input.start;
+  event.end = input.end;
+  await event.save();
 }
 
 export async function addTeamToEvent(eventId: string, teamId: string) {
