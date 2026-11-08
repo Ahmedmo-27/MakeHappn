@@ -61,3 +61,51 @@ export async function sendTeamAssignedEmail(input: {
     return { sent: false, error: message };
   }
 }
+
+export async function sendTaskAssignedEmail(input: {
+  to: string;
+  assigneeName: string;
+  taskTitle: string;
+  eventName: string;
+  dueDate: Date | null;
+  taskPath: string;
+}): Promise<MailResult> {
+  const host = process.env.SMTP_HOST;
+  const from = process.env.MAIL_FROM;
+  if (!host || !from) {
+    return { sent: false, error: "Email is not configured" };
+  }
+
+  const url = `${appBaseUrl()}${input.taskPath}`;
+  const lines = [
+    `Hello ${input.assigneeName},`,
+    "",
+    `You have been assigned "${input.taskTitle}" on ${input.eventName}.`,
+  ];
+  if (input.dueDate) lines.push(`Due ${formatDate(input.dueDate)}.`);
+  lines.push("", "Open the task:", url);
+  const subject = `You have a task on ${input.eventName}: ${input.taskTitle}`;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: process.env.SMTP_SECURE === "true",
+      auth: process.env.SMTP_USER
+        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+        : undefined,
+    });
+
+    await transporter.sendMail({
+      from,
+      to: input.to,
+      subject,
+      text: lines.join("\n"),
+    });
+    return { sent: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Email failed";
+    console.error("Task assignment email failed", message);
+    return { sent: false, error: message };
+  }
+}
