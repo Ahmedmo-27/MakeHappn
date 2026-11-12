@@ -84,11 +84,11 @@ async function ProjectRisks({
         <div
           style={{
             padding: "0.85rem 1rem",
-            backgroundColor: "rgba(220, 38, 38, 0.1)",
-            border: "1px solid var(--danger, #dc2626)",
+            backgroundColor: "var(--danger-soft)",
+            border: "1px solid var(--danger, rgba(255, 107, 87, 0.35))",
             borderRadius: "6px",
             fontSize: "0.875rem",
-            color: "var(--danger, #dc2626)",
+            color: "var(--danger, var(--danger))",
           }}
         >
           <strong>Executive Alert:</strong> {criticalOpen.length} critical risk(s) are actively threatening delivery or profit margins. Immediate mitigation required.
@@ -111,7 +111,7 @@ async function ProjectRisks({
             style={{
               fontSize: "1.5rem",
               fontWeight: 700,
-              color: criticalOpen.length > 0 ? "var(--danger, #dc2626)" : "inherit",
+              color: criticalOpen.length > 0 ? "var(--danger)" : "inherit",
               marginTop: "0.25rem",
             }}
           >
@@ -314,7 +314,7 @@ async function ProjectRisks({
                           <option value="resolved">Mark Resolved</option>
                         </select>
                         <SubmitButton
-                          className="button secondary"
+                          className="btn btn-ghost"
                           style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
                         >
                           Save
@@ -439,7 +439,7 @@ async function ProjectRisks({
           </div>
 
           <div>
-            <SubmitButton className="button primary">Log to Risk Register</SubmitButton>
+            <SubmitButton className="btn btn-primary">Log to Risk Register</SubmitButton>
           </div>
         </form>
       </div>

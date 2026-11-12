@@ -1,3 +1,5 @@
+import "@/models/Client"; // registers the schema for populate("clientId")
+import "@/models/User"; // registers the schema for populate of user refs
 import { connectDB } from "@/lib/db";
 import { Project } from "@/models/Project";
 import { Client } from "@/models/Client";

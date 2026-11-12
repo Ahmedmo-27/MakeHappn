@@ -134,8 +134,8 @@ async function ProjectsList({
                         fontSize: "0.75rem",
                         padding: "0.15rem 0.4rem",
                         borderRadius: "4px",
-                        background: "var(--bg-subtle, #f3f4f6)",
-                        border: "1px solid var(--border-subtle, #e5e7eb)",
+                        background: "var(--bg-subtle, var(--surface-2))",
+                        border: "1px solid var(--border-subtle, var(--line))",
                       }}
                     >
                       {STUDIO_PRODUCT_LABELS[p]}
@@ -147,7 +147,7 @@ async function ProjectsList({
                   style={{
                     marginTop: "auto",
                     paddingTop: "0.5rem",
-                    borderTop: "1px solid var(--border-subtle, #eee)",
+                    borderTop: "1px solid var(--border-subtle, var(--line))",
                     display: "flex",
                     justifyContent: "space-between",
                     fontSize: "0.8rem",
@@ -159,7 +159,7 @@ async function ProjectsList({
                   <span
                     style={{
                       fontWeight: 600,
-                      color: proj.health === "at_risk" ? "#dc2626" : proj.health === "blocked" ? "#b91c1c" : "#16a34a",
+                      color: proj.health === "at_risk" ? "var(--danger)" : proj.health === "blocked" ? "var(--danger)" : "var(--good)",
                     }}
                   >
                     {proj.health.replace("_", " ")}

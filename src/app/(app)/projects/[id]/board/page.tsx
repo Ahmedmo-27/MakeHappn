@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
+import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { formatDate } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
@@ -184,7 +185,7 @@ async function ProjectBoard({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: "1rem",
           alignItems: "flex-start",
         }}
@@ -193,9 +194,9 @@ async function ProjectBoard({
           <div
             key={col.status}
             style={{
-              background: "var(--bg-subtle, #f9fafb)",
+              background: "var(--bg-subtle, var(--surface-2))",
               borderRadius: "8px",
-              border: "1px solid var(--border-subtle, #e5e7eb)",
+              border: "1px solid var(--border-subtle, var(--line))",
               padding: "0.75rem",
               minHeight: "450px",
               display: "flex",
@@ -216,12 +217,12 @@ async function ProjectBoard({
               {col.tasks.map((task) => {
                 const priorityColor =
                   task.priority === "urgent"
-                    ? "#dc2626"
+                    ? "var(--danger)"
                     : task.priority === "high"
-                      ? "#ea580c"
+                      ? "var(--warn)"
                       : task.priority === "medium"
-                        ? "#2563eb"
-                        : "#6b7280";
+                        ? "var(--info)"
+                        : "var(--muted)";
 
                 return (
                   <div
@@ -229,7 +230,7 @@ async function ProjectBoard({
                     className="card"
                     style={{
                       padding: "0.75rem",
-                      background: "#fff",
+                      background: "var(--surface-2)",
                       borderLeft: `3px solid ${priorityColor}`,
                       display: "flex",
                       flexDirection: "column",
@@ -274,10 +275,9 @@ async function ProjectBoard({
                     <form action={moveProjectTaskStatusAction} style={{ marginTop: "0.25rem" }}>
                       <input type="hidden" name="projectId" value={id} />
                       <input type="hidden" name="taskId" value={task.id} />
-                      <select
+                      <AutoSubmitSelect
                         name="status"
                         defaultValue={task.status}
-                        onChange={(e) => e.target.form?.requestSubmit()}
                         className="select"
                         style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem", width: "100%" }}
                       >
@@ -286,7 +286,7 @@ async function ProjectBoard({
                             Move to: {STATUS_LABEL[st]}
                           </option>
                         ))}
-                      </select>
+                      </AutoSubmitSelect>
                     </form>
                   </div>
                 );

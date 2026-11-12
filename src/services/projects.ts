@@ -1,3 +1,5 @@
+import "@/models/Client"; // registers the schema for populate("clientId")
+import "@/models/User"; // registers the schema for populate of user refs
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import {
@@ -108,9 +110,58 @@ export async function createProject(input: CreateProjectInput): Promise<IProject
     committedTotalCost: 0,
     actualTotalCost: 0,
     milestones,
-    teamUserIds: (input.teamUserIds ?? []).map((id) => new Types.ObjectId(id)),
+    teamUserIds: validIds(input.teamUserIds),
   });
 
+  return project;
+}
+
+export type UpdateProjectInput = Omit<CreateProjectInput, "bypassedStages">;
+
+function validIds(ids: string[] = []) {
+  return [...new Set(ids)].filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+}
+
+/** Edit a project's details after creation. Stage, status, financial actuals and closeout keep their own flows. */
+export async function updateProject(projectId: string, input: UpdateProjectInput) {
+  await connectDB();
+  if (!Types.ObjectId.isValid(projectId)) throw new Error("Project not found");
+  if (!input.name?.trim()) throw new Error("Project name is required");
+  if (!input.clientId || !Types.ObjectId.isValid(input.clientId)) {
+    throw new Error("A valid client is required");
+  }
+  if (!input.projectLeadId || !Types.ObjectId.isValid(input.projectLeadId)) {
+    throw new Error("A valid project lead is required");
+  }
+  if (!input.products?.length) throw new Error("At least one product must be selected");
+  if (input.startDate && input.deliveryDate && input.deliveryDate < input.startDate) {
+    throw new Error("Delivery date can't be before the start date");
+  }
+
+  const project = await Project.findByIdAndUpdate(
+    projectId,
+    {
+      $set: {
+        name: input.name.trim(),
+        clientId: new Types.ObjectId(input.clientId),
+        projectLeadId: new Types.ObjectId(input.projectLeadId),
+        products: input.products,
+        brief: input.brief?.trim() ?? "",
+        objectives: input.objectives?.trim() ?? "",
+        audience: input.audience?.trim() ?? "",
+        location: input.location?.trim() ?? "",
+        startDate: input.startDate ?? null,
+        deliveryDate: input.deliveryDate ?? null,
+        currency: input.currency ?? "USD",
+        quotedValue: Math.max(0, input.quotedValue ?? 0),
+        approvedContractValue: Math.max(0, input.approvedContractValue ?? 0),
+        contractedRevisionRounds: Math.max(1, Math.round(input.contractedRevisionRounds ?? 2)),
+        teamUserIds: validIds(input.teamUserIds),
+      },
+    },
+    { returnDocument: "after", runValidators: true },
+  );
+  if (!project) throw new Error("Project not found");
   return project;
 }
 

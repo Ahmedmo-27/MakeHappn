@@ -100,9 +100,9 @@ async function ProjectOverview({
             style={{
               margin: "0.75rem 0",
               padding: "0.75rem 0.9rem",
-              background: "var(--bg-subtle, #f9fafb)",
+              background: "var(--bg-subtle, var(--surface-2))",
               borderRadius: "6px",
-              border: "1px solid var(--border-subtle, #e5e7eb)",
+              border: "1px solid var(--border-subtle, var(--line))",
               display: "grid",
               gap: "0.4rem",
               fontSize: "0.85rem",
@@ -115,15 +115,15 @@ async function ProjectOverview({
               <span className="muted">{STAGE_LABELS[project.stage].whatHappens}</span>
             </div>
             <div style={{ marginTop: "0.25rem" }}>
-              <strong style={{ color: "#166534", display: "block", fontSize: "0.75rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              <strong style={{ color: "var(--good)", display: "block", fontSize: "0.75rem", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 Expected Output Required for Gate Sign-off:
               </strong>
-              <span style={{ color: "#15803d", fontWeight: 600 }}>{STAGE_LABELS[project.stage].expectedOutput}</span>
+              <span style={{ color: "var(--good)", fontWeight: 600 }}>{STAGE_LABELS[project.stage].expectedOutput}</span>
             </div>
           </div>
 
           {isLeadOrOwner && nextStage ? (
-            <form action={advanceStageFormAction} style={{ borderTop: "1px solid var(--border-subtle, #eee)", paddingTop: "1rem" }}>
+            <form action={advanceStageFormAction} style={{ borderTop: "1px solid var(--border-subtle, var(--line))", paddingTop: "1rem" }}>
               <input type="hidden" name="projectId" value={id} />
               <input type="hidden" name="targetStage" value={nextStage} />
               <div className="form-group" style={{ marginBottom: "0.75rem" }}>
@@ -181,10 +181,10 @@ async function ProjectOverview({
             </div>
           )}
 
-          <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border-subtle, #eee)" }}>
+          <div style={{ marginTop: "1rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border-subtle, var(--line))" }}>
             <span style={{ fontSize: "0.85rem" }} className="muted">
               Delivery State:{" "}
-              <strong style={{ color: project.isDelivered ? "#16a34a" : "var(--muted)" }}>
+              <strong style={{ color: project.isDelivered ? "var(--good)" : "var(--muted)" }}>
                 {project.isDelivered ? "Delivered" : "In Flight"}
               </strong>
             </span>
@@ -239,7 +239,7 @@ async function ProjectOverview({
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", textAlign: "left", fontSize: "0.85rem", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "2px solid var(--border-subtle, #e5e7eb)" }}>
+              <tr style={{ borderBottom: "2px solid var(--border-subtle, var(--line))" }}>
                 <th style={{ padding: "0.5rem" }}>Stage</th>
                 <th style={{ padding: "0.5rem" }}>Name</th>
                 <th style={{ padding: "0.5rem" }}>Gate Status</th>
@@ -257,8 +257,8 @@ async function ProjectOverview({
                   <tr
                     key={m.stage}
                     style={{
-                      borderBottom: "1px solid var(--border-subtle, #eee)",
-                      background: isCurrent ? "var(--bg-subtle, #f9fafb)" : "transparent",
+                      borderBottom: "1px solid var(--border-subtle, var(--line))",
+                      background: isCurrent ? "var(--bg-subtle)" : "transparent",
                     }}
                   >
                     <td style={{ padding: "0.5rem", fontWeight: 600 }}>{info.number}</td>
@@ -270,7 +270,7 @@ async function ProjectOverview({
                       {isBypassed ? (
                         <span className="muted">Bypassed</span>
                       ) : m.isGateApproved ? (
-                        <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ Verified</span>
+                        <span style={{ color: "var(--good)", fontWeight: 600 }}>✓ Verified</span>
                       ) : isCurrent ? (
                         <span style={{ color: "var(--accent)", fontWeight: 600 }}>In Review</span>
                       ) : (
@@ -332,7 +332,7 @@ async function ProjectOverview({
                 )}
               </p>
             ) : (
-              <p style={{ margin: "0.25rem 0", color: "#16a34a" }}>
+              <p style={{ margin: "0.25rem 0", color: "var(--good)" }}>
                 ✓ All client invoices paid in full ({invoices.length} total)
               </p>
             )}
@@ -345,7 +345,7 @@ async function ProjectOverview({
                 ⚠ {unbilledPOs.length} open PO(s) awaiting final supplier billing
               </p>
             ) : (
-              <p style={{ margin: "0.25rem 0", color: "#16a34a" }}>
+              <p style={{ margin: "0.25rem 0", color: "var(--good)" }}>
                 ✓ All purchase orders billed and reconciled ({purchaseOrders.length} total)
               </p>
             )}
@@ -427,7 +427,7 @@ async function ProjectOverview({
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
-              <SubmitButton className="button primary">
+              <SubmitButton className="btn btn-primary">
                 {project.status === "closed" ? "Update Closeout Audit" : "Certify Closeout & Close Project"}
               </SubmitButton>
             </div>

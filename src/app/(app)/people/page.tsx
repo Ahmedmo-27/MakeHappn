@@ -58,7 +58,7 @@ async function People({
               </p>
               <details className="disclosure" style={{ marginTop: "0.5rem", marginBottom: 0 }}>
                 <summary className="btn btn-ghost" style={{ fontSize: "0.85rem" }}>Edit Person</summary>
-                <div style={{ marginTop: "0.75rem", padding: "1.25rem", background: "white", borderRadius: "14px", border: "1px solid var(--line)" }}>
+                <div style={{ marginTop: "0.75rem", padding: "1.25rem", background: "var(--surface-2)", borderRadius: "14px", border: "1px solid var(--line)" }}>
                   <PersonForm teams={data.teams} person={person} />
                 </div>
               </details>

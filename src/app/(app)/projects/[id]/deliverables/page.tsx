@@ -93,7 +93,7 @@ async function ProjectDeliverables({
                 key={deliv._id.toString()}
                 className="card"
                 style={{
-                  borderLeft: `4px solid ${isApproved ? "#16a34a" : isRevReq ? "#dc2626" : "var(--accent)"}`,
+                  borderLeft: `4px solid ${isApproved ? "var(--good)" : isRevReq ? "var(--danger)" : "var(--accent)"}`,
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -113,8 +113,8 @@ async function ProjectDeliverables({
                         borderRadius: "999px",
                         fontSize: "0.8rem",
                         fontWeight: 600,
-                        background: isApproved ? "#dcfce7" : isRevReq ? "#fee2e2" : "#e0e7ff",
-                        color: isApproved ? "#15803d" : isRevReq ? "#b91c1c" : "#3730a3",
+                        background: isApproved ? "var(--good-soft)" : isRevReq ? "var(--danger-soft)" : "var(--info-soft)",
+                        color: isApproved ? "var(--good)" : isRevReq ? "var(--danger)" : "var(--info)",
                       }}
                     >
                       {DELIVERABLE_STATUS_LABELS[deliv.status as DeliverableStatus]}
@@ -126,9 +126,9 @@ async function ProjectDeliverables({
                 {revExceeded ? (
                   <div
                     style={{
-                      background: "#fff1f2",
-                      border: "1px solid #fecdd3",
-                      color: "#9f1239",
+                      background: "var(--danger-soft)",
+                      border: "1px solid rgba(255, 107, 87, 0.3)",
+                      color: "var(--danger)",
                       padding: "0.5rem 0.75rem",
                       borderRadius: "6px",
                       margin: "0.5rem 0",
@@ -144,7 +144,7 @@ async function ProjectDeliverables({
                 ) : null}
 
                 {/* Versions Accordion */}
-                <div style={{ background: "var(--bg-subtle, #f9fafb)", padding: "0.75rem", borderRadius: "6px", margin: "0.5rem 0" }}>
+                <div style={{ background: "var(--bg-subtle, var(--surface-2))", padding: "0.75rem", borderRadius: "6px", margin: "0.5rem 0" }}>
                   <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Version & Submission History:</span>
                   <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.2rem", fontSize: "0.85rem" }}>
                     {deliv.versions.map((ver, idx) => {
@@ -166,7 +166,7 @@ async function ProjectDeliverables({
 
                 {/* Review Feedback History */}
                 {deliv.reviews && deliv.reviews.length > 0 ? (
-                  <div style={{ background: "var(--bg-subtle, #f9fafb)", padding: "0.75rem", borderRadius: "6px", margin: "0.5rem 0" }}>
+                  <div style={{ background: "var(--bg-subtle, var(--surface-2))", padding: "0.75rem", borderRadius: "6px", margin: "0.5rem 0" }}>
                     <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Review Log:</span>
                     <ul style={{ margin: "0.25rem 0 0", paddingLeft: "1.2rem", fontSize: "0.85rem" }}>
                       {deliv.reviews.map((rev, idx) => {
@@ -183,13 +183,13 @@ async function ProjectDeliverables({
                 ) : null}
 
                 {/* Review / Resubmit Actions */}
-                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1rem", borderTop: "1px solid var(--border-subtle, #eee)", paddingTop: "0.75rem" }}>
+                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "1rem", borderTop: "1px solid var(--border-subtle, var(--line))", paddingTop: "0.75rem" }}>
                   {isLeadOrOwner && deliv.status !== "approved" && deliv.status !== "final" ? (
                     <details className="disclosure" style={{ flex: 1 }}>
                       <summary className="btn btn-ghost" style={{ cursor: "pointer", fontSize: "0.85rem" }}>
                         + Add Review Decision
                       </summary>
-                      <form action={submitReviewFormAction} className="stack" style={{ marginTop: "0.75rem", gap: "0.75rem", padding: "1rem", background: "white", borderRadius: "12px", border: "1px solid var(--line)" }}>
+                      <form action={submitReviewFormAction} className="stack" style={{ marginTop: "0.75rem", gap: "0.75rem", padding: "1rem", background: "var(--surface-2)", borderRadius: "12px", border: "1px solid var(--line)" }}>
                         <input type="hidden" name="projectId" value={id} />
                         <input type="hidden" name="deliverableId" value={deliv._id.toString()} />
                         <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
@@ -223,10 +223,10 @@ async function ProjectDeliverables({
 
                   {deliv.status === "revision_required" ? (
                     <details className="disclosure" style={{ flex: 1 }}>
-                      <summary className="btn btn-ghost" style={{ cursor: "pointer", fontSize: "0.85rem", color: "#16a34a" }}>
+                      <summary className="btn btn-ghost" style={{ cursor: "pointer", fontSize: "0.85rem", color: "var(--good)" }}>
                         + Submit Next Version (v{deliv.currentVersion + 1})
                       </summary>
-                      <form action={submitNewVersionFormAction} className="stack" style={{ marginTop: "0.75rem", gap: "0.75rem", padding: "1rem", background: "white", borderRadius: "12px", border: "1px solid var(--line)" }}>
+                      <form action={submitNewVersionFormAction} className="stack" style={{ marginTop: "0.75rem", gap: "0.75rem", padding: "1rem", background: "var(--surface-2)", borderRadius: "12px", border: "1px solid var(--line)" }}>
                         <input type="hidden" name="projectId" value={id} />
                         <input type="hidden" name="deliverableId" value={deliv._id.toString()} />
                         <div className="form-group">

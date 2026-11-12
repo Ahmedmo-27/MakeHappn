@@ -7,8 +7,12 @@ import { assertName, field, fieldList } from "@/lib/parse";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { getCurrentUser } from "@/lib/session";
+import { canManageProject } from "@/lib/permissions";
 import {
   createProject,
+  updateProject,
+  getProjectById,
+  type UpdateProjectInput,
   advanceProjectStage,
   updateProjectStatus,
   submitCloseoutAudit,
@@ -17,9 +21,44 @@ import {
   isProjectStage,
   isProjectStatus,
   isStudioProduct,
+  CURRENCIES,
   type StudioProduct,
   type StudioCurrency,
 } from "@/lib/domain";
+
+/** Parses the shared project form (create + edit). Returns an error message when invalid. */
+function readProjectForm(formData: FormData, fallbackLeadId: string): UpdateProjectInput | string {
+  const name = assertName(field(formData, "name"), "Project name", 120);
+  const products: StudioProduct[] = fieldList(formData, "products").filter(isStudioProduct);
+  if (products.length === 0) return "Select at least one studio product";
+
+  const rawCurrency = field(formData, "currency");
+  const currency: StudioCurrency = (CURRENCIES as readonly string[]).includes(rawCurrency)
+    ? (rawCurrency as StudioCurrency)
+    : "USD";
+  const num = (key: string) => {
+    const n = parseFloat(field(formData, key));
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  };
+
+  return {
+    name,
+    clientId: field(formData, "clientId"),
+    projectLeadId: field(formData, "projectLeadId") || fallbackLeadId,
+    products,
+    teamUserIds: fieldList(formData, "teamUserIds"),
+    brief: field(formData, "brief"),
+    objectives: field(formData, "objectives"),
+    audience: field(formData, "audience"),
+    location: field(formData, "location"),
+    startDate: parseDateInput(field(formData, "startDate")),
+    deliveryDate: parseDateInput(field(formData, "deliveryDate")),
+    currency,
+    quotedValue: num("quotedValue"),
+    approvedContractValue: num("approvedContractValue"),
+    contractedRevisionRounds: Math.max(1, Math.round(num("contractedRevisionRounds")) || 2),
+  };
+}
 
 export async function createProjectAction(
   _prev: ActionResult | null,
@@ -28,44 +67,9 @@ export async function createProjectAction(
   let projectId = "";
   try {
     const user = await getCurrentUser();
-    const name = assertName(field(formData, "name"), "Project name", 120);
-    const clientId = field(formData, "clientId");
-    const projectLeadId = field(formData, "projectLeadId") || user.id;
-
-    const rawProducts = fieldList(formData, "products");
-    const products: StudioProduct[] = rawProducts.filter(isStudioProduct);
-    if (products.length === 0) {
-      return { ok: false, error: "Select at least one studio product" };
-    }
-
-    const startDate = parseDateInput(field(formData, "startDate"));
-    const deliveryDate = parseDateInput(field(formData, "deliveryDate"));
-
-    const currency = (field(formData, "currency") || "USD") as StudioCurrency;
-    const quotedValue = parseFloat(field(formData, "quotedValue")) || 0;
-    const approvedContractValue =
-      parseFloat(field(formData, "approvedContractValue")) || 0;
-
-    const brief = field(formData, "brief");
-    const objectives = field(formData, "objectives");
-    const audience = field(formData, "audience");
-    const location = field(formData, "location");
-
-    const created = await createProject({
-      name,
-      clientId,
-      projectLeadId,
-      products,
-      brief,
-      objectives,
-      audience,
-      location,
-      startDate,
-      deliveryDate,
-      currency,
-      quotedValue,
-      approvedContractValue,
-    });
+    const input = readProjectForm(formData, user.id);
+    if (typeof input === "string") return { ok: false, error: input };
+    const created = await createProject(input);
 
     projectId = created._id.toString();
     refresh();
@@ -80,6 +84,39 @@ export async function createProjectFormAction(formData: FormData): Promise<void>
   const result = await createProjectAction(null, formData);
   if (!result.ok) {
     redirectWith("/projects/new", { error: result.error });
+  }
+}
+
+export async function updateProjectAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const projectId = field(formData, "projectId");
+  try {
+    const user = await getCurrentUser();
+    const project = await getProjectById(projectId);
+    if (!project) return { ok: false, error: "Project not found" };
+    if (!canManageProject(user, project)) {
+      return { ok: false, error: "Only the project lead or an executive can edit this project" };
+    }
+    const input = readProjectForm(formData, String(project.projectLeadId?._id ?? user.id));
+    if (typeof input === "string") return { ok: false, error: input };
+    await updateProject(projectId, input);
+    refresh();
+    return { ok: true, notice: "Project updated" };
+  } catch (error) {
+    unstable_rethrow(error);
+    return { ok: false, error: messageOf(error) };
+  }
+}
+
+export async function updateProjectFormAction(formData: FormData): Promise<void> {
+  const projectId = field(formData, "projectId");
+  const result = await updateProjectAction(null, formData);
+  if (result.ok) {
+    redirectWith(`/projects/${projectId}/scope`, { notice: result.notice });
+  } else {
+    redirectWith(`/projects/${projectId}/edit`, { error: result.error });
   }
 }
 

@@ -243,7 +243,7 @@ async function ProjectChanges({
                           <form action={approveChangeRequestFormAction}>
                             <input type="hidden" name="changeRequestId" value={String(cr._id)} />
                             <input type="hidden" name="projectId" value={id} />
-                            <SubmitButton className="button secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}>
+                            <SubmitButton className="btn btn-ghost" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}>
                               Approve & Apply
                             </SubmitButton>
                           </form>
@@ -374,7 +374,7 @@ async function ProjectChanges({
           </div>
 
           <div>
-            <SubmitButton className="button primary">Log Change Request</SubmitButton>
+            <SubmitButton className="btn btn-primary">Log Change Request</SubmitButton>
           </div>
         </form>
       </div>

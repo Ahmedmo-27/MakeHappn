@@ -201,12 +201,12 @@ async function ReportsContent() {
                     marginTop: "0.75rem",
                   }}
                 >
-                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "4px" }}>
+                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "4px" }}>
                     <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>{lane.openTasks}</div>
                     <span className="hint" style={{ fontSize: "0.75rem" }}>Active / In Flight</span>
                   </div>
 
-                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "4px" }}>
+                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "4px" }}>
                     <div
                       style={{
                         fontSize: "1.25rem",
@@ -219,12 +219,12 @@ async function ReportsContent() {
                     <span className="hint" style={{ fontSize: "0.75rem" }}>Urgent Priority</span>
                   </div>
 
-                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "4px" }}>
+                  <div style={{ padding: "0.5rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "4px" }}>
                     <div
                       style={{
                         fontSize: "1.25rem",
                         fontWeight: 700,
-                        color: lane.blockedTasks > 0 ? "var(--danger, #dc2626)" : "inherit",
+                        color: lane.blockedTasks > 0 ? "var(--danger)" : "inherit",
                       }}
                     >
                       {lane.blockedTasks}
@@ -288,7 +288,7 @@ async function ReportsContent() {
                         <span
                           style={{
                             fontWeight: 600,
-                            color: isOverBudget ? "var(--danger, #dc2626)" : "#16a34a",
+                            color: isOverBudget ? "var(--danger)" : "var(--good)",
                           }}
                         >
                           {isOverBudget ? "+" : ""}
@@ -366,7 +366,7 @@ async function ReportsContent() {
         <div className="card" style={{ padding: "1.5rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <h2 style={{ margin: 0, fontSize: "1.15rem" }}>Sales Pipeline Conversion</h2>
-            <Link href="/sales" className="button secondary" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}>
+            <Link href="/sales" className="btn btn-ghost" style={{ fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}>
               View CRM →
             </Link>
           </div>
@@ -398,7 +398,7 @@ async function ReportsContent() {
 
             <div style={{ padding: "1rem", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "6px" }}>
               <div className="hint" style={{ fontSize: "0.75rem" }}>Won & Confirmed</div>
-              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#16a34a", marginTop: "0.25rem" }}>
+              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--good)", marginTop: "0.25rem" }}>
                 {funnel.wonLeads}
               </div>
             </div>

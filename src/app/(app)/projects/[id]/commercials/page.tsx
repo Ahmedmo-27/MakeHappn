@@ -85,7 +85,7 @@ async function ProjectCommercials({
           gap: "1rem",
         }}
       >
-        <div className="card" style={{ background: "#f8fafc" }}>
+        <div className="card" style={{ background: "var(--surface-2)" }}>
           <span className="muted" style={{ fontSize: "0.8rem", fontWeight: 600 }}>1. APPROVED CONTRACT VALUE</span>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "var(--accent)" }}>
             {curr} {financialSummary.contractValue.toLocaleString()}
@@ -95,9 +95,9 @@ async function ProjectCommercials({
           </span>
         </div>
 
-        <div className="card" style={{ background: "#f8fafc" }}>
+        <div className="card" style={{ background: "var(--surface-2)" }}>
           <span className="muted" style={{ fontSize: "0.8rem", fontWeight: 600 }}>2. COMMITTED PO LIABILITIES</span>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "#d97706" }}>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "var(--warn)" }}>
             {curr} {financialSummary.openCommittedPOCosts.toLocaleString()}
           </div>
           <span className="muted" style={{ fontSize: "0.75rem" }}>
@@ -105,9 +105,9 @@ async function ProjectCommercials({
           </span>
         </div>
 
-        <div className="card" style={{ background: "#f8fafc" }}>
+        <div className="card" style={{ background: "var(--surface-2)" }}>
           <span className="muted" style={{ fontSize: "0.8rem", fontWeight: 600 }}>3. ACTUAL INCURRED COSTS</span>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "#dc2626" }}>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "var(--danger)" }}>
             {curr} {financialSummary.actualIncurredCosts.toLocaleString()}
           </div>
           <span className="muted" style={{ fontSize: "0.75rem" }}>
@@ -115,12 +115,12 @@ async function ProjectCommercials({
           </span>
         </div>
 
-        <div className="card" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#166534" }}>PROJECTED GROSS MARGIN</span>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "#15803d" }}>
+        <div className="card" style={{ background: "var(--good-soft)", border: "1px solid rgba(123, 227, 165, 0.3)" }}>
+          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--good)" }}>PROJECTED GROSS MARGIN</span>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0.25rem 0", color: "var(--good)" }}>
             {curr} {financialSummary.projectedGrossMargin.toLocaleString()}
           </div>
-          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#15803d" }}>
+          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--good)" }}>
             {financialSummary.projectedMarginPercent.toFixed(1)}% Realized Margin
           </span>
         </div>
@@ -189,7 +189,7 @@ async function ProjectCommercials({
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", textAlign: "left", fontSize: "0.85rem", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                <tr style={{ borderBottom: "2px solid var(--line)" }}>
                   <th style={{ padding: "0.5rem" }}>PO Number</th>
                   <th style={{ padding: "0.5rem" }}>Partner / Maker</th>
                   <th style={{ padding: "0.5rem" }}>Scope</th>
@@ -205,13 +205,13 @@ async function ProjectCommercials({
                   const remaining = Math.max(0, po.amount - (po.billedAmount || 0));
 
                   return (
-                    <tr key={po._id.toString()} style={{ borderBottom: "1px solid #eee" }}>
+                    <tr key={po._id.toString()} style={{ borderBottom: "1px solid var(--line)" }}>
                       <td style={{ padding: "0.5rem", fontWeight: 700, color: "var(--accent)" }}>{po.poNumber}</td>
                       <td style={{ padding: "0.5rem" }}><strong>{partner?.name ?? "Partner"}</strong></td>
                       <td style={{ padding: "0.5rem" }}>{po.scopeDescription}</td>
                       <td style={{ padding: "0.5rem", fontWeight: 600 }}>{curr} {po.amount.toLocaleString()}</td>
                       <td style={{ padding: "0.5rem" }}>{curr} {(po.billedAmount || 0).toLocaleString()}</td>
-                      <td style={{ padding: "0.5rem", color: remaining > 0 ? "#d97706" : "var(--muted)", fontWeight: 600 }}>
+                      <td style={{ padding: "0.5rem", color: remaining > 0 ? "var(--warn)" : "var(--muted)", fontWeight: 600 }}>
                         {curr} {remaining.toLocaleString()}
                       </td>
                       <td style={{ padding: "0.5rem" }}>
@@ -291,7 +291,7 @@ async function ProjectCommercials({
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", textAlign: "left", fontSize: "0.85rem", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                <tr style={{ borderBottom: "2px solid var(--line)" }}>
                   <th style={{ padding: "0.5rem" }}>Bill #</th>
                   <th style={{ padding: "0.5rem" }}>PO Ref</th>
                   <th style={{ padding: "0.5rem" }}>Received Date</th>
@@ -303,15 +303,15 @@ async function ProjectCommercials({
                 {supplierBills.map((b) => {
                   const po = b.purchaseOrderId as unknown as { poNumber?: string } | null;
                   return (
-                    <tr key={b._id.toString()} style={{ borderBottom: "1px solid #eee" }}>
+                    <tr key={b._id.toString()} style={{ borderBottom: "1px solid var(--line)" }}>
                       <td style={{ padding: "0.5rem", fontWeight: 600 }}>{b.billNumber}</td>
                       <td style={{ padding: "0.5rem", color: "var(--accent)" }}>{po?.poNumber ?? "PO"}</td>
                       <td style={{ padding: "0.5rem" }}>{formatDate(b.receivedAt)}</td>
-                      <td style={{ padding: "0.5rem", fontWeight: 700, color: "#dc2626" }}>
+                      <td style={{ padding: "0.5rem", fontWeight: 700, color: "var(--danger)" }}>
                         {curr} {b.amount.toLocaleString()}
                       </td>
                       <td style={{ padding: "0.5rem" }}>
-                        <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ {b.status.toUpperCase()}</span>
+                        <span style={{ color: "var(--good)", fontWeight: 600 }}>✓ {b.status.toUpperCase()}</span>
                       </td>
                     </tr>
                   );
@@ -380,7 +380,7 @@ async function ProjectCommercials({
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", textAlign: "left", fontSize: "0.85rem", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ borderBottom: "2px solid #e5e7eb" }}>
+                <tr style={{ borderBottom: "2px solid var(--line)" }}>
                   <th style={{ padding: "0.5rem" }}>Invoice #</th>
                   <th style={{ padding: "0.5rem" }}>Milestone</th>
                   <th style={{ padding: "0.5rem" }}>Due Date</th>
@@ -391,7 +391,7 @@ async function ProjectCommercials({
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv._id.toString()} style={{ borderBottom: "1px solid #eee" }}>
+                  <tr key={inv._id.toString()} style={{ borderBottom: "1px solid var(--line)" }}>
                     <td style={{ padding: "0.5rem", fontWeight: 700 }}>{inv.invoiceNumber}</td>
                     <td style={{ padding: "0.5rem" }}>{inv.milestoneTitle}</td>
                     <td style={{ padding: "0.5rem" }}>{inv.dueDate ? formatDate(inv.dueDate) : "—"}</td>
@@ -411,7 +411,7 @@ async function ProjectCommercials({
                           <SubmitButton variant="ghost">Mark Paid ✓</SubmitButton>
                         </form>
                       ) : (
-                        <span style={{ color: "#16a34a", fontSize: "0.8rem", fontWeight: 600 }}>Settled</span>
+                        <span style={{ color: "var(--good)", fontSize: "0.8rem", fontWeight: 600 }}>Settled</span>
                       )}
                     </td>
                   </tr>
