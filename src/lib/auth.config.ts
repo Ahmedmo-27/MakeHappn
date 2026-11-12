@@ -10,9 +10,8 @@ export const authConfig = {
     authorized({ auth, request }) {
       const loggedIn = !!auth?.user;
       const { pathname } = request.nextUrl;
-      if (pathname === "/") {
-        return Response.redirect(new URL(loggedIn ? "/dashboard" : "/login", request.nextUrl));
-      }
+      // Public marketing home; its CTA leads to /login (or the dashboard when signed in)
+      if (pathname === "/") return true;
       if (pathname === "/login") {
         if (loggedIn) return Response.redirect(new URL("/dashboard", request.nextUrl));
         return true;

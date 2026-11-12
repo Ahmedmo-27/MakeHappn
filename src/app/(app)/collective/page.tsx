@@ -159,8 +159,8 @@ async function CollectiveList({
                       fontSize: "0.75rem",
                       padding: "0.15rem 0.4rem",
                       borderRadius: "4px",
-                      background: "var(--bg-subtle, #f3f4f6)",
-                      border: "1px solid var(--border-subtle, #e5e7eb)",
+                      background: "var(--bg-subtle, var(--surface-2))",
+                      border: "1px solid var(--border-subtle, var(--line))",
                     }}
                   >
                     {s}
@@ -174,8 +174,8 @@ async function CollectiveList({
                 </p>
               ) : null}
 
-              <div style={{ marginTop: "auto", paddingTop: "0.5rem", borderTop: "1px solid #eee", fontSize: "0.8rem", color: "var(--muted)" }}>
-                Status: <strong style={{ color: "#16a34a" }}>{m.status.toUpperCase()}</strong>
+              <div style={{ marginTop: "auto", paddingTop: "0.5rem", borderTop: "1px solid var(--line)", fontSize: "0.8rem", color: "var(--muted)" }}>
+                Status: <strong style={{ color: "var(--good)" }}>{m.status.toUpperCase()}</strong>
               </div>
             </div>
           ))}

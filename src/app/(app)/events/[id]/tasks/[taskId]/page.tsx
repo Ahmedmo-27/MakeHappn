@@ -43,7 +43,7 @@ async function TaskScreen({ params }: { params: Promise<{ id: string; taskId: st
         {task.canEdit ? (
           <details className="disclosure">
             <summary className="btn btn-ghost" style={{ fontSize: "0.88rem" }}>Edit task</summary>
-            <div style={{ marginTop: "0.75rem", padding: "1.25rem", background: "white", borderRadius: "14px", border: "1px solid var(--line)" }}>
+            <div style={{ marginTop: "0.75rem", padding: "1.25rem", background: "var(--surface-2)", borderRadius: "14px", border: "1px solid var(--line)" }}>
               <EditTaskForm
                 key={`${task.title}|${task.description}|${task.dueDate ?? ""}|${task.teamId}|${task.status}`}
                 taskId={task.id}

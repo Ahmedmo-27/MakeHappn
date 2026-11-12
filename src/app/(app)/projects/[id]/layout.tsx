@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
 import { ProjectTabs } from "@/components/project-tabs";
+import { canManageProject } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
 import {
@@ -49,6 +50,7 @@ async function ProjectFrame({
 
   const isLead = lead?._id ? lead._id.toString() === user.id : false;
   const canViewCommercials = user.role === "owner" || isLead;
+  const canEdit = canManageProject(user, project);
 
   return (
     <div className="page page-wide">
@@ -74,8 +76,8 @@ async function ProjectFrame({
                 fontWeight: 600,
                 padding: "0.2rem 0.5rem",
                 borderRadius: "999px",
-                background: project.health === "at_risk" ? "#fee2e2" : project.health === "blocked" ? "#fef2f2" : "#dcfce7",
-                color: project.health === "at_risk" ? "#dc2626" : project.health === "blocked" ? "#b91c1c" : "#15803d",
+                background: project.health === "at_risk" ? "var(--danger-soft)" : project.health === "blocked" ? "var(--danger-soft)" : "var(--good-soft)",
+                color: project.health === "at_risk" ? "var(--danger)" : project.health === "blocked" ? "var(--danger)" : "var(--good)",
               }}
             >
               {project.health.replace("_", " ").toUpperCase()}
@@ -94,6 +96,11 @@ async function ProjectFrame({
             ))}
           </div>
         </div>
+        {canEdit ? (
+          <Link className="btn btn-ghost" href={`/projects/${id}/edit`}>
+            Edit project
+          </Link>
+        ) : null}
       </header>
 
       {/* 11-Stage Pipeline Visual Tracker */}
@@ -102,8 +109,8 @@ async function ProjectFrame({
         style={{
           padding: "0.75rem 1rem",
           marginBottom: "1.25rem",
-          background: "var(--bg-subtle, #f9fafb)",
-          border: "1px solid var(--border-subtle, #e5e7eb)",
+          background: "var(--bg-subtle, var(--surface-2))",
+          border: "1px solid var(--border-subtle, var(--line))",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
@@ -121,10 +128,10 @@ async function ProjectFrame({
             const isCurrent = idx === currentStageIndex;
             const isBypassed = project.bypassedStages?.includes(st as ProjectStage);
 
-            let bg = "#e5e7eb";
-            if (isBypassed) bg = "#f3f4f6";
-            else if (isCompleted) bg = "#16a34a";
-            else if (isCurrent) bg = "var(--accent, #2563eb)";
+            let bg = "var(--surface-3)";
+            if (isBypassed) bg = "var(--surface-2)";
+            else if (isCompleted) bg = "var(--good)";
+            else if (isCurrent) bg = "var(--accent)";
 
             return (
               <div

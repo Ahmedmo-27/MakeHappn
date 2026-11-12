@@ -27,6 +27,7 @@ async function ProjectScope({
   const project = await getProjectById(id);
 
   if (!project) notFound();
+  const team = (project.teamUserIds ?? []) as unknown as { _id: unknown; name?: string; title?: string }[];
 
   return (
     <div className="stack" style={{ gap: "1.5rem", maxWidth: "800px" }}>
@@ -39,8 +40,8 @@ async function ProjectScope({
               style={{
                 padding: "0.75rem",
                 borderRadius: "6px",
-                border: "1px solid var(--border-subtle, #e5e7eb)",
-                background: "var(--bg-subtle, #f9fafb)",
+                border: "1px solid var(--border-subtle, var(--line))",
+                background: "var(--bg-subtle, var(--surface-2))",
               }}
             >
               <strong style={{ display: "block", color: "var(--accent)" }}>
@@ -64,6 +65,24 @@ async function ProjectScope({
         </div>
       </div>
 
+      <div className="card">
+        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Internal Team</h2>
+        {team.length === 0 ? (
+          <p className="muted" style={{ margin: 0 }}>
+            No team members assigned yet. Only the project lead and executives can see this project.
+          </p>
+        ) : (
+          <div className="pills">
+            {team.map((m) => (
+              <span key={String(m._id)} className="pill">
+                {m.name}
+                {m.title ? <span className="muted"> · {m.title}</span> : null}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="card stack" style={{ gap: "1rem" }}>
         <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Strategic Scope & Brief</h2>
 
@@ -71,7 +90,7 @@ async function ProjectScope({
           <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
             CREATIVE BRIEF
           </label>
-          <div style={{ padding: "0.75rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "6px", fontSize: "0.95rem", whiteSpace: "pre-wrap" }}>
+          <div style={{ padding: "0.75rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "6px", fontSize: "0.95rem", whiteSpace: "pre-wrap" }}>
             {project.brief || "No brief recorded yet."}
           </div>
         </div>
@@ -80,7 +99,7 @@ async function ProjectScope({
           <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
             OBJECTIVES & SUCCESS CRITERIA
           </label>
-          <div style={{ padding: "0.75rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "6px", fontSize: "0.95rem", whiteSpace: "pre-wrap" }}>
+          <div style={{ padding: "0.75rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "6px", fontSize: "0.95rem", whiteSpace: "pre-wrap" }}>
             {project.objectives || "No specific objectives specified."}
           </div>
         </div>
@@ -90,7 +109,7 @@ async function ProjectScope({
             <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
               TARGET AUDIENCE
             </label>
-            <div style={{ padding: "0.75rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "6px", fontSize: "0.95rem" }}>
+            <div style={{ padding: "0.75rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "6px", fontSize: "0.95rem" }}>
               {project.audience || "General Public"}
             </div>
           </div>
@@ -99,7 +118,7 @@ async function ProjectScope({
             <label style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--muted)", display: "block", marginBottom: "0.25rem" }}>
               LOCATION / SITE
             </label>
-            <div style={{ padding: "0.75rem", background: "var(--bg-subtle, #f9fafb)", borderRadius: "6px", fontSize: "0.95rem" }}>
+            <div style={{ padding: "0.75rem", background: "var(--bg-subtle, var(--surface-2))", borderRadius: "6px", fontSize: "0.95rem" }}>
               {project.location || "TBD / To be confirmed"}
             </div>
           </div>

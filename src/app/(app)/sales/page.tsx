@@ -147,7 +147,7 @@ async function SalesPipeline({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
           gap: "1.25rem",
           alignItems: "flex-start",
         }}
@@ -156,9 +156,9 @@ async function SalesPipeline({
           <div
             key={col.stage}
             style={{
-              background: "var(--bg-subtle, #f9fafb)",
+              background: "var(--bg-subtle, var(--surface-2))",
               borderRadius: "8px",
-              border: "1px solid var(--border-subtle, #e5e7eb)",
+              border: "1px solid var(--border-subtle, var(--line))",
               padding: "0.75rem",
               minHeight: "450px",
               display: "flex",
@@ -177,7 +177,7 @@ async function SalesPipeline({
               {col.leads.map((lead) => {
                 const convertedProj = lead.convertedProjectId as unknown as { _id?: unknown; code?: string; name?: string } | null;
                 return (
-                  <div key={lead._id.toString()} className="card" style={{ padding: "0.75rem", background: "#fff" }}>
+                  <div key={lead._id.toString()} className="card" style={{ padding: "0.75rem", background: "var(--surface-2)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <strong style={{ fontSize: "1rem" }}>{lead.companyName}</strong>
                       <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--accent)" }}>
@@ -191,7 +191,7 @@ async function SalesPipeline({
 
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", margin: "0.25rem 0" }}>
                       {lead.products.map((p) => (
-                        <span key={p} style={{ fontSize: "0.7rem", padding: "0.1rem 0.35rem", background: "#f3f4f6", borderRadius: "4px" }}>
+                        <span key={p} style={{ fontSize: "0.7rem", padding: "0.1rem 0.35rem", background: "var(--surface-2)", borderRadius: "4px" }}>
                           {STUDIO_PRODUCT_LABELS[p]}
                         </span>
                       ))}
@@ -205,15 +205,15 @@ async function SalesPipeline({
 
                     {/* Stage 04 Project Confirmation Gate */}
                     {lead.stage === "proposal" || lead.stage === "discovery" ? (
-                      <form action={convertLeadFormAction} style={{ marginTop: "0.5rem", borderTop: "1px solid #eee", paddingTop: "0.5rem" }}>
+                      <form action={convertLeadFormAction} style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line)", paddingTop: "0.5rem" }}>
                         <input type="hidden" name="leadId" value={lead._id.toString()} />
                         <SubmitButton variant="ghost">
                           ✓ Confirm & Start Project (Gate 04)
                         </SubmitButton>
                       </form>
                     ) : lead.stage === "won" && convertedProj ? (
-                      <div style={{ marginTop: "0.5rem", borderTop: "1px solid #eee", paddingTop: "0.5rem" }}>
-                        <Link href={`/projects/${convertedProj._id?.toString()}`} style={{ fontSize: "0.8rem", fontWeight: 600, color: "#16a34a" }}>
+                      <div style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line)", paddingTop: "0.5rem" }}>
+                        <Link href={`/projects/${convertedProj._id?.toString()}`} style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--good)" }}>
                           ✓ Active Project: {convertedProj.code} →
                         </Link>
                       </div>

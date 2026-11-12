@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { Landing } from "@/components/landing/landing";
+import "./landing.css";
 
 export default function Home() {
-  redirect("/dashboard");
+  return <Landing />;
 }

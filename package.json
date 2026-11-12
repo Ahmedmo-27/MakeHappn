@@ -14,11 +14,13 @@
     "@dnd-kit/utilities": "^3.2.2",
     "bcryptjs": "^3.0.3",
     "mongoose": "^9.12.0",
+    "motion": "^14.12.0",
     "next": "16.4.5",
     "next-auth": "^5.0.0-beta.32",
     "nodemailer": "^8.0.11",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "three": "^0.187.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -26,6 +28,7 @@
     "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.187.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",

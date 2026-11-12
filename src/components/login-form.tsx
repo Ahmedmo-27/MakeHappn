@@ -12,18 +12,22 @@ export function LoginForm() {
     <form action={action} className="login-card">
       <div className="form-header">
         <p className="kicker">Sign in</p>
-        <h2 className="display" style={{ margin: 0, fontSize: "2rem" }}>Welcome back</h2>
+        <h2 className="display" style={{ margin: 0, fontSize: "2.3rem", lineHeight: 0.95 }}>
+          Welcome <br />back.
+        </h2>
       </div>
       <label className="field">
         <span>Email</span>
-        <input className="input" name="email" type="email" autoComplete="username" required />
+        <input className="input" name="email" type="email" autoComplete="username" placeholder="you@makehappen.local" required />
       </label>
       <label className="field">
         <span>Password</span>
         <PasswordInput autoComplete="current-password" required />
       </label>
-      {state?.error ? <p className="banner banner-error">{state.error}</p> : null}
-      <SubmitButton>Sign in</SubmitButton>
+      {state?.error ? <p className="banner banner-error" style={{ margin: 0 }}>{state.error}</p> : null}
+      <SubmitButton>
+        Enter the studio <span className="arrow" aria-hidden="true">→</span>
+      </SubmitButton>
     </form>
   );
 }
