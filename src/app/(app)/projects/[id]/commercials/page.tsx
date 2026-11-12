@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
@@ -392,7 +393,9 @@ async function ProjectCommercials({
               <tbody>
                 {invoices.map((inv) => (
                   <tr key={inv._id.toString()} style={{ borderBottom: "1px solid var(--line)" }}>
-                    <td style={{ padding: "0.5rem", fontWeight: 700 }}>{inv.invoiceNumber}</td>
+                    <td style={{ padding: "0.5rem", fontWeight: 700 }}>
+                      <Link href={`/projects/${id}/invoices/${inv._id.toString()}`}>{inv.invoiceNumber}</Link>
+                    </td>
                     <td style={{ padding: "0.5rem" }}>{inv.milestoneTitle}</td>
                     <td style={{ padding: "0.5rem" }}>{inv.dueDate ? formatDate(inv.dueDate) : "—"}</td>
                     <td style={{ padding: "0.5rem", fontWeight: 700, color: "var(--accent)" }}>

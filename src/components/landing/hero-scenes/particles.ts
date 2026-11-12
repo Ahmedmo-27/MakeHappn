@@ -105,9 +105,9 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
         float d = length(gl_PointCoord - 0.5);
         if (d > 0.5) discard;
         float a = 1.0 - smoothstep(0.0, 0.5, d);
-        vec3 ink = vec3(0.95, 0.94, 0.91);
-        vec3 lime = vec3(0.83, 1.0, 0.23);
-        gl_FragColor = vec4(mix(ink, lime, vMix), a * mix(0.55, 0.95, vMix));
+        vec3 ink = vec3(1.0, 1.0, 1.0);
+        vec3 nude = vec3(0.882, 0.863, 0.847);
+        gl_FragColor = vec4(mix(ink, nude, vMix), a * mix(0.55, 0.95, vMix));
       }
     `,
   });

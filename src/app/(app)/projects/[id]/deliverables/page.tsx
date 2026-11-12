@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/format";
@@ -75,9 +76,12 @@ async function ProjectDeliverables({
 
       {/* Deliverables List */}
       {deliverables.length === 0 ? (
-        <div className="empty">
-          <p>No deliverables recorded for this project yet.</p>
-          <p className="hint">Create a deliverable for the current stage (e.g. Creative Concept Deck, Spatial 3D Renderings, Brand Guidelines).</p>
+        <div className="empty empty-illu">
+          <Sticker name="carrier" className="sticker-plate empty-sticker" />
+          <div>
+            <p>No deliverables recorded for this project yet.</p>
+            <p className="hint">Create a deliverable for the current stage (e.g. Creative Concept Deck, Spatial 3D Renderings, Brand Guidelines).</p>
+          </div>
         </div>
       ) : (
         <div className="stack" style={{ gap: "1rem" }}>

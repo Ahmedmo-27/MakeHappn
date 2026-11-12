@@ -1,11 +1,42 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
+import { Instrument_Serif, JetBrains_Mono, Oooh_Baby } from "next/font/google";
 import { Suspense } from "react";
-import { Inter_Tight, JetBrains_Mono, Syne } from "next/font/google";
 import { Interactions } from "@/components/fx/interactions";
 import "./globals.css";
 
-const display = Syne({ subsets: ["latin"], weight: ["500", "600", "700", "800"], variable: "--font-display" });
-const sans = Inter_Tight({ subsets: ["latin"], variable: "--font-sans" });
+/**
+ * 2025 type, with free stand-ins until the licensed files are added.
+ * General Sans is the UI face (this file).
+ * Instrument Serif stands in for Editorial New: display headlines and the italic "make".
+ * Oooh Baby stands in for Awesome Ways: one script accent.
+ * Drop Editorial New and Awesome Ways into src/fonts and point these loaders at them.
+ * JetBrains Mono stays for IDs and money. It is not a brand face.
+ */
+const display = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-display",
+});
+
+const sans = localFont({
+  src: [
+    { path: "../fonts/GeneralSans-Regular.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/GeneralSans-Medium.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/GeneralSans-Semibold.woff2", weight: "600", style: "normal" },
+    { path: "../fonts/GeneralSans-Bold.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const script = Oooh_Baby({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-script",
+});
+
 const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
@@ -14,13 +45,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d0d0b",
+  themeColor: "#000000",
   colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${script.variable} ${mono.variable}`}>
       <body>
         {children}
         <Suspense fallback={null}>

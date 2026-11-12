@@ -1,5 +1,5 @@
 import { PROJECT_STAGES, STAGE_LABELS, STUDIO_PRODUCTS, STUDIO_PRODUCT_LABELS } from "@/lib/domain";
-import { INK, LIME, damp, displayFont, type SceneBuilder } from "./types";
+import { INK, NUDE, damp, displayFont, type SceneBuilder } from "./types";
 
 /** 7 · Word sphere: the 11 stages and 6 products orbit on a slow globe; the word nearest the pointer lights up. */
 const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
@@ -46,7 +46,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
   );
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(R * 1.12, 0.004, 6, 160),
-    new THREE.MeshBasicMaterial({ color: LIME, transparent: true, opacity: 0.4 }),
+    new THREE.MeshBasicMaterial({ color: NUDE, transparent: true, opacity: 0.4 }),
   );
   ring.rotation.x = Math.PI / 2.3;
   group.add(globe);
@@ -54,7 +54,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
 
   camera.position.set(0, 0, 9.6);
   const world = new THREE.Vector3();
-  const lime = new THREE.Color(LIME);
+  const lime = new THREE.Color(NUDE);
   const ink = new THREE.Color(INK);
 
   return {

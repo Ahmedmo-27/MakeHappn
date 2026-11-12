@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { createTeamAction, promoteLeaderAction, renameTeamAction } from "@/app/actions/org";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { roleLabel } from "@/lib/domain";
@@ -40,6 +41,7 @@ async function Teams({
             &ldquo;Everyone has a lane · Projects move across lanes · Ownership is clear at every handover.&rdquo;
           </p>
         </div>
+        <Sticker name="checkerboard" className="header-grid" />
       </header>
       <form action={createTeamAction} className="row card form-card" style={{ maxWidth: "640px", alignItems: "flex-end", gap: "0.85rem" }}>
         <label className="field" style={{ flex: 1 }}>

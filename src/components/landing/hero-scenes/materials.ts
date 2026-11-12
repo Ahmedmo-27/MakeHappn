@@ -1,6 +1,6 @@
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { LIME, damp, type SceneBuilder, type Three } from "./types";
+import { NUDE, damp, type SceneBuilder, type Three } from "./types";
 
 /** Procedural 256px textures, so nothing has to be downloaded. */
 function texture(THREE: Three, draw: (g: CanvasRenderingContext2D, s: number) => void) {
@@ -24,7 +24,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   const key = new THREE.DirectionalLight(0xffffff, 2.6);
   key.position.set(3, 5, 4);
   scene.add(key);
-  const rim = new THREE.PointLight(LIME, 8, 10, 1.6);
+  const rim = new THREE.PointLight(NUDE, 8, 10, 1.6);
   rim.position.set(-3, 1, -2);
   scene.add(rim);
 
@@ -79,7 +79,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   const slabs = [
     { mat: new THREE.MeshStandardMaterial({ map: marble, roughness: 0.25, metalness: 0 }), size: [1.7, 0.16, 1.1] },
     { mat: new THREE.MeshStandardMaterial({ map: brushed, roughness: 0.35, metalness: 1 }), size: [1.5, 0.08, 1.0] },
-    { mat: new THREE.MeshPhysicalMaterial({ color: LIME, roughness: 0.05, transparent: true, opacity: 0.55, clearcoat: 1 }), size: [1.4, 0.1, 1.1] },
+    { mat: new THREE.MeshPhysicalMaterial({ color: NUDE, roughness: 0.05, transparent: true, opacity: 0.55, clearcoat: 1 }), size: [1.4, 0.1, 1.1] },
     { mat: new THREE.MeshStandardMaterial({ map: fabric, roughness: 0.95 }), size: [1.6, 0.12, 1.05] },
     { mat: new THREE.MeshStandardMaterial({ map: timber, roughness: 0.6 }), size: [1.8, 0.2, 1.0] },
   ].map((s, i) => {

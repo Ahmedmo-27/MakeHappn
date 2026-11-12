@@ -1,5 +1,5 @@
 import type { BufferGeometry, Material, Object3D, Vector3 } from "three";
-import { LIME, damp, easeOut, type SceneBuilder } from "./types";
+import { BG, INK, NUDE, damp, displayFont, easeOut, uiFont, type SceneBuilder } from "./types";
 
 /**
  * 2 · The pavilion that builds itself: a full event pavilion (deck, slatted roof,
@@ -12,11 +12,11 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
   scene.add(root);
 
   // ---------- lighting ----------
-  scene.add(new THREE.HemisphereLight(0xf2efe8, 0x0d0d0b, 0.9));
+  scene.add(new THREE.HemisphereLight(INK, BG, 0.9));
   const key = new THREE.DirectionalLight(0xffffff, 1.8);
   key.position.set(5, 8, 4);
   scene.add(key);
-  const rim = new THREE.PointLight(LIME, 10, 12, 1.4);
+  const rim = new THREE.PointLight(NUDE, 10, 12, 1.4);
   rim.position.set(-3.5, 3, -3);
   scene.add(rim);
   const warm = new THREE.PointLight(0xffc98a, 4, 6, 1.6);
@@ -25,21 +25,21 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
 
   // ---------- materials ----------
   const M = {
-    dark: new THREE.MeshStandardMaterial({ color: 0x1d1d1a, roughness: 0.75, metalness: 0.1 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x161616, roughness: 0.75, metalness: 0.1 }),
     bone: new THREE.MeshStandardMaterial({ color: 0xe6e1d4, roughness: 0.55 }),
     wood: new THREE.MeshStandardMaterial({ color: 0x7a5233, roughness: 0.7 }),
     woodLight: new THREE.MeshStandardMaterial({ color: 0xa5764a, roughness: 0.65 }),
     metal: new THREE.MeshStandardMaterial({ color: 0x8c8c86, roughness: 0.3, metalness: 0.85 }),
-    lime: new THREE.MeshStandardMaterial({ color: LIME, roughness: 0.4, emissive: LIME, emissiveIntensity: 0.3 }),
+    lime: new THREE.MeshStandardMaterial({ color: NUDE, roughness: 0.4, emissive: NUDE, emissiveIntensity: 0.3 }),
     fabric: new THREE.MeshStandardMaterial({ color: 0x8a3f2c, roughness: 0.95 }),
-    rug: new THREE.MeshStandardMaterial({ color: 0x2c2b27, roughness: 1 }),
+    rug: new THREE.MeshStandardMaterial({ color: 0x242424, roughness: 1 }),
     leaf: new THREE.MeshStandardMaterial({ color: 0x3d5a32, roughness: 0.8, flatShading: true }),
     glow: new THREE.MeshBasicMaterial({ color: 0xffe7b8 }),
-    limeGlow: new THREE.MeshBasicMaterial({ color: LIME }),
+    limeGlow: new THREE.MeshBasicMaterial({ color: NUDE }),
     person: new THREE.MeshStandardMaterial({ color: 0xbdb8ab, roughness: 0.8 }),
     personAlt: new THREE.MeshStandardMaterial({ color: 0x5b5a54, roughness: 0.8 }),
   };
-  const edgeMat = new THREE.LineBasicMaterial({ color: LIME, transparent: true, opacity: 0.45 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: NUDE, transparent: true, opacity: 0.45 });
 
   // LED wall texture
   const led = (() => {
@@ -48,16 +48,16 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
     c.height = 256;
     const g = c.getContext("2d")!;
     const grad = g.createLinearGradient(0, 0, 512, 256);
-    grad.addColorStop(0, "#0d0d0b");
-    grad.addColorStop(1, "#23300a");
+    grad.addColorStop(0, "#000000");
+    grad.addColorStop(1, "#1c1b1a");
     g.fillStyle = grad;
     g.fillRect(0, 0, 512, 256);
-    g.fillStyle = "#d4ff3a";
+    g.fillStyle = "#E1DCD8";
     for (let i = 0; i < 26; i++) g.fillRect(20 + i * 18, 200 - Math.abs(Math.sin(i * 0.7)) * 70, 10, 4);
-    g.font = "800 54px sans-serif";
-    g.fillStyle = "#f2efe8";
+    g.font = "400 54px sans-serif";
+    g.fillStyle = "#ffffff";
     g.fillText("MAKE IT", 26, 82);
-    g.fillStyle = "#d4ff3a";
+    g.fillStyle = "#E1DCD8";
     g.fillText("HAPPEN.", 26, 140);
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -92,14 +92,14 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
   const cyl = (rt: number, rb: number, h: number, mat: Material, seg = 20) => mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
 
   // ---------- ground ----------
-  const grid = new THREE.GridHelper(12, 48, LIME, 0x24241f);
+  const grid = new THREE.GridHelper(12, 48, NUDE, 0x2a2a2a);
   const gm = grid.material as Material;
   gm.transparent = true;
   gm.opacity = 0.28;
   root.add(grid);
   const path = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.6, 0.005, 5.5), new THREE.Vector3(0.6, 0.005, 2.3)]),
-    new THREE.LineDashedMaterial({ color: LIME, dashSize: 0.12, gapSize: 0.08 }),
+    new THREE.LineDashedMaterial({ color: NUDE, dashSize: 0.12, gapSize: 0.08 }),
   );
   path.computeLineDistances();
   root.add(path);
@@ -242,14 +242,19 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
     c.width = 128;
     c.height = 512;
     const g = c.getContext("2d")!;
-    g.fillStyle = "#d4ff3a";
+    g.fillStyle = "#E1DCD8";
     g.fillRect(0, 0, 128, 512);
     g.save();
     g.translate(84, 490);
     g.rotate(-Math.PI / 2);
-    g.fillStyle = "#0d0d0b";
-    g.font = "800 62px sans-serif";
-    g.fillText("makehappn.", 0, 0);
+    g.fillStyle = "#000000";
+    const display = displayFont();
+    const sans = uiFont();
+    g.font = `italic 400 64px ${display}`;
+    g.fillText("make", 0, 0);
+    const makeWidth = g.measureText("make").width;
+    g.font = `600 56px ${sans}`;
+    g.fillText("happn.", makeWidth, 2);
     g.restore();
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;

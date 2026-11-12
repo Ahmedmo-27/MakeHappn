@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
@@ -64,6 +65,7 @@ async function SalesPipeline({
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
+          <Sticker name="crafting-curating" className="sticker-plate header-oval" />
           <span style={{ fontSize: "0.85rem" }} className="muted">Total In-Flight Pipeline</span>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--accent)" }}>
             ${totalPipelineValue.toLocaleString()}

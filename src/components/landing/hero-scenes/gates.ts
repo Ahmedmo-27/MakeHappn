@@ -1,4 +1,4 @@
-import { displayFont, INK, LIME, damp, type SceneBuilder } from "./types";
+import { BG, displayFont, INK, NUDE, damp, type SceneBuilder } from "./types";
 
 /** 1 · The 11 gates: a curved corridor of glass panels; the active gate walks forward, scroll flies through. */
 const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
@@ -44,11 +44,11 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
   const pts = Array.from({ length: COUNT }, (_, i) => new THREE.Vector3(Math.sin(i * 0.32) * 1.1 - 0.4, -1.15, -i * 1.05));
   const floor = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(new THREE.CatmullRomCurve3(pts).getPoints(120)),
-    new THREE.LineBasicMaterial({ color: LIME, transparent: true, opacity: 0.55 }),
+    new THREE.LineBasicMaterial({ color: NUDE, transparent: true, opacity: 0.55 }),
   );
   group.add(floor);
 
-  scene.fog = new THREE.Fog(0x0d0d0b, 4, 14);
+  scene.fog = new THREE.Fog(BG, 4, 14);
   let camZ = 4.6;
 
   return {
@@ -58,9 +58,9 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer, ...ctx }) => {
         const isActive = i === active;
         const done = i < active;
         const targetFill = isActive ? 0.16 : done ? 0.06 : 0.025;
-        gate.fillMat.color.setHex(isActive ? LIME : INK);
-        gate.lineMat.color.setHex(isActive ? LIME : INK);
-        gate.numMat.color.setHex(isActive ? LIME : INK);
+        gate.fillMat.color.setHex(isActive ? NUDE : INK);
+        gate.lineMat.color.setHex(isActive ? NUDE : INK);
+        gate.numMat.color.setHex(isActive ? NUDE : INK);
         gate.fillMat.opacity = damp(gate.fillMat.opacity, targetFill, 8, dt);
         gate.lineMat.opacity = damp(gate.lineMat.opacity, isActive ? 1 : done ? 0.55 : 0.25, 8, dt);
         gate.numMat.opacity = damp(gate.numMat.opacity, isActive ? 1 : 0.35, 8, dt);

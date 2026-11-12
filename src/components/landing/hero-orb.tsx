@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 /**
  * Lightweight WebGL hero: one noise-displaced icosahedron rendered with a
- * custom shader (acid-lime fresnel rim + bone core). three.js is loaded
+ * custom shader (nude fresnel rim + black core). three.js is loaded
  * lazily, rendering pauses when the orb is off-screen or the tab is hidden,
  * and the pixel ratio is capped to keep GPU cost low.
  */
@@ -78,12 +78,12 @@ const fragment = /* glsl */ `
   varying float vNoise;
   void main() {
     float fres = pow(1.0 - max(dot(vNormal, vView), 0.0), 2.7);
-    vec3 core = mix(vec3(0.045, 0.045, 0.04), vec3(0.13, 0.13, 0.115), vNoise * 0.5 + 0.5);
-    vec3 lime = vec3(0.83, 1.0, 0.23);
-    vec3 color = core + lime * fres * 1.1;
+    vec3 core = mix(vec3(0.02, 0.02, 0.02), vec3(0.12, 0.12, 0.12), vNoise * 0.5 + 0.5);
+    vec3 nude = vec3(0.882, 0.863, 0.847);
+    vec3 color = core + nude * fres * 1.1;
     // fine contour bands for an engraved, editorial feel
     float bands = smoothstep(0.94, 1.0, abs(sin(vNoise * 18.0)));
-    color += lime * bands * 0.14;
+    color += nude * bands * 0.14;
     gl_FragColor = vec4(color, 1.0);
   }
 `;
@@ -124,7 +124,7 @@ export function HeroOrb() {
 
       // Orbiting wire ring for depth
       const ringGeo = new THREE.TorusGeometry(2.05, 0.004, 8, 180);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0xd4ff3a, transparent: true, opacity: 0.35 });
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xe1dcd8, transparent: true, opacity: 0.35 });
       const ring = new THREE.Mesh(ringGeo, ringMat);
       ring.rotation.x = Math.PI / 2.4;
       scene.add(ring);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { formatDate, readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
@@ -215,7 +216,12 @@ async function Dashboard({
                 <span className="badge badge-at-risk">{exceptionCount} open</span>
               </div>
               {exceptionCount === 0 ? (
-                <p className="empty">Nothing is on fire. Enjoy it.</p>
+                <div className="empty empty-illu">
+                  <Sticker name="laptop" className="sticker-plate empty-sticker" />
+                  <div>
+                    <p>Nothing is on fire. Enjoy it.</p>
+                  </div>
+                </div>
               ) : (
                 <ul className="attn-list">
                   {atRiskProjects.map((p) => (

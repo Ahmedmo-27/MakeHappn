@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate, formatCurrency } from "@/lib/format";
@@ -438,6 +439,9 @@ async function ProjectOverview({
           </div>
         )}
       </div>
+      <footer className="project-stamp">
+        <Sticker name="barcode" className="project-stamp-mark" />
+      </footer>
     </div>
   );
 }

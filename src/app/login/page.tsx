@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Sticker } from "@/components/brand/sticker";
 import { LoginForm } from "@/components/login-form";
+import { Wordmark } from "@/components/wordmark";
 
 export const metadata = { title: "Sign in" };
 
@@ -7,10 +9,10 @@ export default function LoginPage() {
   return (
     <main className="login-screen">
       <section className="login-copy">
+        <Sticker name="badge-thumbs" className="sticker-plate login-sticker login-sticker-badge" />
+        <Sticker name="spark" className="sticker-plate login-sticker login-sticker-spark" />
         <div className="login-top">
-          <Link href="/" className="wordmark">
-            makehappn<span className="dot">.</span>
-          </Link>
+          <Wordmark href="/" />
           <Link href="/" className="login-back">← Back to studio</Link>
         </div>
 

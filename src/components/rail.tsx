@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { SessionUser } from "@/lib/permissions";
 import { roleLabel } from "@/lib/domain";
 import { logout } from "@/app/actions/auth";
+import { Wordmark } from "@/components/wordmark";
 
 const links = [
   { href: "/dashboard", label: "Command Center", ownerOnly: false },
@@ -33,9 +34,7 @@ export function Rail({ user }: { user: SessionUser }) {
     <aside className="rail">
       <div className="rail-brand">
         <p className="brand-kicker">Studio OS · live</p>
-        <Link href="/dashboard" className="brand wordmark">
-          makehappn<span className="dot">.</span>
-        </Link>
+        <Wordmark href="/dashboard" className="brand" />
       </div>
 
       <nav className="rail-nav" aria-label="Main">

@@ -27,16 +27,23 @@ export interface SceneHandle {
 
 export type SceneBuilder = (ctx: SceneCtx) => SceneHandle;
 
-export const LIME = 0xd4ff3a;
-export const INK = 0xf2efe8;
-export const BG = 0x0d0d0b;
+/** Nude #E1DCD8. Scenes used to call this lime. */
+export const NUDE = 0xe1dcd8;
+export const INK = 0xffffff;
+export const BG = 0x000000;
 
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 export const easeOut = (v: number) => 1 - Math.pow(1 - clamp01(v), 3);
 export const damp = (from: number, to: number, rate: number, dt: number) => from + (to - from) * (1 - Math.exp(-rate * dt));
 
-/** The display font family that next/font registered (falls back to sans-serif). */
+/** The display font family that next/font registered (falls back to serif). */
 export function displayFont() {
   const v = getComputedStyle(document.documentElement).getPropertyValue("--font-display").trim();
+  return v || "serif";
+}
+
+/** The UI font family that next/font registered (falls back to sans-serif). */
+export function uiFont() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--font-sans").trim();
   return v || "sans-serif";
 }

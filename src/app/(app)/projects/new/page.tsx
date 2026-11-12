@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
@@ -63,9 +64,12 @@ async function NewProjectForm({
             Configure client, products, project lead, and commercial baseline. Projects are issued a sequential code (e.g. MH-2026-001).
           </p>
         </div>
-        <Link className="btn btn-ghost" href="/projects">
-          Cancel
-        </Link>
+        <div className="stack" style={{ alignItems: "flex-end", gap: "0.85rem" }}>
+          <Sticker name="wordmark-sticker" className="header-mark" />
+          <Link className="btn btn-ghost" href="/projects">
+            Cancel
+          </Link>
+        </div>
       </header>
 
       <form action={createProjectFormAction} className="card form-card stack" style={{ maxWidth: "800px", gap: "1.35rem" }}>

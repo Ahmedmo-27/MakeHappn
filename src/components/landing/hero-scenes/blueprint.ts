@@ -1,5 +1,5 @@
 import type { BufferGeometry, Material, SpriteMaterial, Vector3 } from "three";
-import { LIME, damp, displayFont, type SceneBuilder } from "./types";
+import { BG, INK, NUDE, damp, displayFont, uiFont, type SceneBuilder } from "./types";
 
 /**
  * 4 · Blueprint to reality: a full exhibition booth (truss, fascia, LED wall,
@@ -14,11 +14,11 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   root.position.y = BASE_Y;
   scene.add(root);
 
-  scene.add(new THREE.HemisphereLight(0xf2efe8, 0x0d0d0b, 0.8));
+  scene.add(new THREE.HemisphereLight(INK, BG, 0.8));
   const key = new THREE.DirectionalLight(0xffffff, 2);
   key.position.set(4, 7, 5);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(LIME, 0.6);
+  const fill = new THREE.DirectionalLight(NUDE, 0.6);
   fill.position.set(-5, 2, -2);
   scene.add(fill);
 
@@ -27,9 +27,9 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   const clip = { clippingPlanes: [solidClip] };
 
   const M = {
-    dark: new THREE.MeshStandardMaterial({ color: 0x23231f, roughness: 0.6, ...clip }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.6, ...clip }),
     bone: new THREE.MeshStandardMaterial({ color: 0xe9e4d8, roughness: 0.5, ...clip }),
-    lime: new THREE.MeshStandardMaterial({ color: LIME, roughness: 0.35, emissive: LIME, emissiveIntensity: 0.25, ...clip }),
+    lime: new THREE.MeshStandardMaterial({ color: NUDE, roughness: 0.35, emissive: NUDE, emissiveIntensity: 0.25, ...clip }),
     wood: new THREE.MeshStandardMaterial({ color: 0x9a6b42, roughness: 0.65, ...clip }),
     metal: new THREE.MeshStandardMaterial({ color: 0x8c8c86, roughness: 0.3, metalness: 0.85, ...clip }),
     glass: new THREE.MeshStandardMaterial({ color: 0xbfd6e6, roughness: 0.05, transparent: true, opacity: 0.25, ...clip }),
@@ -38,7 +38,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
     person: new THREE.MeshStandardMaterial({ color: 0xbdb8ab, roughness: 0.8, ...clip }),
     personAlt: new THREE.MeshStandardMaterial({ color: 0x5b5a54, roughness: 0.8, ...clip }),
   };
-  const wireMat = new THREE.LineBasicMaterial({ color: LIME, transparent: true, opacity: 0.85, clippingPlanes: [wireClip] });
+  const wireMat = new THREE.LineBasicMaterial({ color: NUDE, transparent: true, opacity: 0.85, clippingPlanes: [wireClip] });
 
   const canvasTex = (w: number, h: number, draw: (g: CanvasRenderingContext2D) => void) => {
     const c = document.createElement("canvas");
@@ -50,6 +50,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
     return tex;
   };
   const font = displayFont();
+  const sans = uiFont();
 
   /** Adds a solid (clipped below the scan line) and its blueprint edges (clipped above it). */
   const add = (geo: BufferGeometry, mat: Material, x: number, y: number, z: number, rot: [number, number, number] = [0, 0, 0]) => {
@@ -68,7 +69,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
     add(new THREE.CylinderGeometry(rt, rb, h, seg), mat, x, y, z);
 
   // ---------- ground grid ----------
-  const grid = new THREE.GridHelper(9, 36, LIME, 0x24241f);
+  const grid = new THREE.GridHelper(9, 36, NUDE, 0x2a2a2a);
   const gm = grid.material as Material;
   gm.transparent = true;
   gm.opacity = 0.22;
@@ -87,12 +88,15 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   box(0.08, 0.08, 2.8, M.metal, 1.85, 2.86, 0);
   box(0.08, 0.08, 2.8, M.metal, -1.85, 2.86, 0);
   const fasciaTex = canvasTex(1024, 96, (g) => {
-    g.fillStyle = "#d4ff3a";
+    g.fillStyle = "#E1DCD8";
     g.fillRect(0, 0, 1024, 96);
-    g.fillStyle = "#0d0d0b";
-    g.font = `800 60px ${font}`;
+    g.fillStyle = "#000000";
     g.textBaseline = "middle";
-    g.fillText("makehappn.", 32, 50);
+    g.font = `italic 400 64px ${font}`;
+    g.fillText("make", 32, 50);
+    const makeWidth = g.measureText("make").width;
+    g.font = `600 56px ${sans}`;
+    g.fillText("happn.", 32 + makeWidth, 52);
     g.font = "600 26px monospace";
     g.fillText("HALL 3 · STAND B-14", 720, 50);
   });
@@ -108,16 +112,16 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   // ---------- LED wall + logo disc ----------
   const ledTex = canvasTex(512, 256, (g) => {
     const grad = g.createLinearGradient(0, 0, 512, 256);
-    grad.addColorStop(0, "#0d0d0b");
-    grad.addColorStop(1, "#2a3a0b");
+    grad.addColorStop(0, "#000000");
+    grad.addColorStop(1, "#1c1b1a");
     g.fillStyle = grad;
     g.fillRect(0, 0, 512, 256);
-    g.strokeStyle = "rgba(212,255,58,0.6)";
+    g.strokeStyle = "rgba(225,220,216,0.6)";
     g.lineWidth = 3;
     g.beginPath();
     for (let x = 0; x <= 512; x += 8) g.lineTo(x, 170 - Math.sin(x / 40) * 40 - x / 8);
     g.stroke();
-    g.fillStyle = "#f2efe8";
+    g.fillStyle = "#ffffff";
     g.font = `800 46px ${font}`;
     g.fillText("Ideas, built.", 28, 70);
   });
@@ -185,7 +189,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   // ---------- drawing annotations (fade out as it gets built) ----------
   const annot = new THREE.Group();
   root.add(annot);
-  const annotLine = new THREE.LineBasicMaterial({ color: LIME, transparent: true, opacity: 0.9 });
+  const annotLine = new THREE.LineBasicMaterial({ color: NUDE, transparent: true, opacity: 0.9 });
   const dim = (a: Vector3, b: Vector3, tickDir: Vector3) => {
     const t = tickDir.clone().multiplyScalar(0.08);
     const pts = [a, b, a.clone().add(t), a.clone().sub(t), b.clone().add(t), b.clone().sub(t)];
@@ -197,7 +201,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
     measure.font = "500 52px monospace";
     const w = Math.ceil(measure.measureText(text).width) + 16;
     const tex = canvasTex(w, 96, (g) => {
-      g.fillStyle = "#d4ff3a";
+      g.fillStyle = "#E1DCD8";
       g.font = "500 52px monospace";
       g.textBaseline = "middle";
       g.fillText(text, 8, 50);
@@ -223,7 +227,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, pointer, ...ctx }
   // glowing scan frame at the clip height
   const scan = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(4.2, 0.001, 3.2)),
-    new THREE.LineBasicMaterial({ color: LIME, transparent: true, opacity: 0.9 }),
+    new THREE.LineBasicMaterial({ color: NUDE, transparent: true, opacity: 0.9 }),
   );
   root.add(scan);
 

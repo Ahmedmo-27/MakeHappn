@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { PersonForm } from "@/components/person-form";
 import { roleLabel } from "@/lib/domain";
@@ -31,7 +32,7 @@ async function People({
       <Banner error={flash.error} notice={flash.notice} />
       <header className="page-header">
         <div>
-          <p className="kicker">Studio</p>
+          <Sticker name="meet-tape" className="people-tape" />
           <h1 className="title-compact">People</h1>
           <p className="lede">Add the people who will sign in. A member works on one team, a team has one leader, and an owner sits outside the teams.</p>
         </div>

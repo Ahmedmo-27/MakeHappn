@@ -1,4 +1,4 @@
-import { INK, LIME, damp, type SceneBuilder } from "./types";
+import { INK, NUDE, damp, type SceneBuilder } from "./types";
 
 /** 9 · Spotlight on an empty stage: a dark set where only the spotlight (following the cursor) reveals the props. */
 const build: SceneBuilder = ({ THREE, scene, camera, renderer, ...ctx }) => {
@@ -8,7 +8,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, renderer, ...ctx }) => {
   scene.add(new THREE.AmbientLight(0xffffff, 0.07));
   const dark = new THREE.MeshStandardMaterial({ color: 0x3a3a34, roughness: 0.8 });
   const bone = new THREE.MeshStandardMaterial({ color: 0xe8e3d6, roughness: 0.55 });
-  const lime = new THREE.MeshStandardMaterial({ color: LIME, roughness: 0.4 });
+  const lime = new THREE.MeshStandardMaterial({ color: NUDE, roughness: 0.4 });
   const metal = new THREE.MeshStandardMaterial({ color: 0x8c8c86, roughness: 0.3, metalness: 0.8 });
   const screenMat = new THREE.MeshStandardMaterial({ color: 0x8f8b80, roughness: 0.6 });
 

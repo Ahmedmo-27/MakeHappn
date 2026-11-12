@@ -13,6 +13,8 @@ import {
   useTransform,
   useVelocity,
 } from "motion/react";
+import { Sticker } from "@/components/brand/sticker";
+import { Wordmark } from "@/components/wordmark";
 import { HeroPicker, HeroVisual } from "./hero-scenes/hero-visual";
 import { PROJECT_STAGES, STAGE_LABELS, STUDIO_PRODUCT_LABELS, STUDIO_PRODUCTS } from "@/lib/domain";
 
@@ -155,13 +157,11 @@ function TiltCard({ children, className }: { children: React.ReactNode; classNam
 
 function Nav() {
   const { scrollY } = useScroll();
-  const bg = useTransform(scrollY, [0, 120], ["rgba(13,13,11,0)", "rgba(13,13,11,0.78)"]);
-  const border = useTransform(scrollY, [0, 120], ["rgba(242,239,232,0)", "rgba(242,239,232,0.08)"]);
+  const bg = useTransform(scrollY, [0, 120], ["rgba(0,0,0,0)", "rgba(0,0,0,0.82)"]);
+  const border = useTransform(scrollY, [0, 120], ["rgba(255,255,255,0)", "rgba(255,255,255,0.08)"]);
   return (
     <motion.header className="lp-nav" style={{ backgroundColor: bg, borderColor: border }}>
-      <Link href="/" className="wordmark lp-logo">
-        makehappn<span className="dot">.</span>
-      </Link>
+      <Wordmark href="/" className="lp-logo" />
       <nav className="lp-links" aria-label="Sections">
         <a href="#model">Model</a>
         <a href="#stages">Stages</a>
@@ -198,7 +198,7 @@ function Hero() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
         >
-          Creative studio · Cairo · Est. for experiences
+          Boutique design studio
         </motion.p>
         <h1 className="lp-title">
           <SplitWords text="We make" delay={0.15} />
@@ -293,6 +293,7 @@ function Model() {
           No step moves forward without alignment. Every phase knows who owns it, what it needs,
           and what it must hand over.
         </p>
+        <Sticker name="studio-card" className="model-card" />
       </div>
       <div className="lp-phase-list">
         {PHASES.map((phase, i) => (
@@ -387,7 +388,7 @@ function Stages() {
 const LANES = [
   {
     name: "Vision & Design",
-    tone: "lime",
+    tone: "nude",
     people: [
       ["Sara Dawoud", "Founder & Managing Director"],
       ["Sama", "Creative Lead"],
@@ -398,7 +399,7 @@ const LANES = [
   },
   {
     name: "Project & Delivery",
-    tone: "blue",
+    tone: "white",
     people: [
       ["Sara M.", "Project & Delivery Lead"],
       ["Mai", "Design & Production Executive"],
@@ -407,7 +408,7 @@ const LANES = [
   },
   {
     name: "Communication",
-    tone: "amber",
+    tone: "line",
     people: [["Mariam", "Social Media Specialist"]],
   },
 ];
@@ -571,6 +572,8 @@ function Closing() {
         setPos({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
       }}
     >
+      <Sticker name="sticky-manifesto" className="lp-sticky" />
+      <Sticker name="burst-script" className="lp-burst" />
       <p className="kicker">Ready when you are</p>
       <h2
         className="lp-closing-title"
@@ -604,7 +607,7 @@ export function Landing() {
         <Closing />
       </main>
       <footer className="lp-footer">
-        <span className="wordmark">makehappn<span className="dot">.</span></span>
+        <Wordmark />
         <span>Brief · Design · Production · Communication</span>
         <span>© MakeHappn Studio · Cairo</span>
       </footer>

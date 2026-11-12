@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import Link from "next/link";
+import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
@@ -134,9 +135,12 @@ async function CollectiveList({
 
       {/* Grid of Collective Partners */}
       {members.length === 0 ? (
-        <div className="empty">
-          <p>No collective partners found.</p>
-          <p className="hint">Add artisans, suppliers, or specialized contractors to the studio network.</p>
+        <div className="empty empty-illu">
+          <Sticker name="dog" className="sticker-plate empty-sticker" />
+          <div>
+            <p>No collective partners found.</p>
+            <p className="hint">Add artisans, suppliers, or specialized contractors to the studio network.</p>
+          </div>
         </div>
       ) : (
         <div className="card-grid">

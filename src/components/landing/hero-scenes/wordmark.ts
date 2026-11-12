@@ -1,4 +1,4 @@
-import { LIME, damp, displayFont, type SceneBuilder } from "./types";
+import { NUDE, damp, displayFont, type SceneBuilder } from "./types";
 
 /** 5 · A 3D wordmark: a thick stone "M" built from stacked layers, turning toward the cursor, with a bouncing lime dot. */
 const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
@@ -9,7 +9,7 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
     const c = document.createElement("canvas");
     c.width = c.height = 1024;
     const g = c.getContext("2d")!;
-    g.font = `800 860px ${displayFont()}`;
+    g.font = `400 860px ${displayFont()}`;
     g.textAlign = "center";
     g.textBaseline = "middle";
     if (stroke) {
@@ -31,8 +31,8 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
   const plane = new THREE.PlaneGeometry(2.8, 2.8);
   const LAYERS = 36;
   const depth = 0.55;
-  const dark = new THREE.Color(0x16160f);
-  const lit = new THREE.Color(0x77746a);
+  const dark = new THREE.Color(0x141414);
+  const lit = new THREE.Color(0x8a8a8a);
   for (let i = 0; i < LAYERS; i++) {
     const k = i / (LAYERS - 1);
     const mat = new THREE.MeshBasicMaterial({ map: fillTex, transparent: true, alphaTest: 0.5, color: dark.clone().lerp(lit, k * k) });
@@ -43,22 +43,22 @@ const build: SceneBuilder = ({ THREE, scene, camera, pointer }) => {
   // front face + lime edge outline (front and back)
   const face = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: fillTex, transparent: true, alphaTest: 0.5, color: 0x4a4840 }));
   face.position.z = 0.002;
-  const edge = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: strokeTex, transparent: true, color: LIME, depthWrite: false }));
+  const edge = new THREE.Mesh(plane, new THREE.MeshBasicMaterial({ map: strokeTex, transparent: true, color: NUDE, depthWrite: false }));
   edge.position.z = 0.004;
   const backEdge = edge.clone();
-  backEdge.material = new THREE.MeshBasicMaterial({ map: strokeTex, transparent: true, color: LIME, opacity: 0.35, depthWrite: false });
+  backEdge.material = new THREE.MeshBasicMaterial({ map: strokeTex, transparent: true, color: NUDE, opacity: 0.35, depthWrite: false });
   backEdge.position.z = -depth - 0.002;
   group.add(face, edge, backEdge);
 
   // the lime dot, bouncing with squash and stretch
   const dot = new THREE.Mesh(
     new THREE.SphereGeometry(0.22, 32, 32),
-    new THREE.MeshBasicMaterial({ color: LIME }),
+    new THREE.MeshBasicMaterial({ color: NUDE }),
   );
   group.add(dot);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.3, 32),
-    new THREE.MeshBasicMaterial({ color: LIME, transparent: true, opacity: 0.25, depthWrite: false }),
+    new THREE.MeshBasicMaterial({ color: NUDE, transparent: true, opacity: 0.25, depthWrite: false }),
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.set(1.6, -0.9, -0.25);
