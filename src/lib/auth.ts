@@ -20,20 +20,25 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
 
-        await connectDB();
-        const user = await User.findOne({ email }).select("+passwordHash");
-        if (!user?.passwordHash) return null;
+        try {
+          await connectDB();
+          const user = await User.findOne({ email }).select("+passwordHash");
+          if (!user?.passwordHash) return null;
 
-        const matches = await bcrypt.compare(password, user.passwordHash);
-        if (!matches) return null;
+          const matches = await bcrypt.compare(password, user.passwordHash);
+          if (!matches) return null;
 
-        return {
-          id: String(user._id),
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          teamId: user.teamId ? String(user.teamId) : null,
-        };
+          return {
+            id: String(user._id),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            teamId: user.teamId ? String(user.teamId) : null,
+          };
+        } catch (error) {
+          console.error("[auth] credential check failed", error);
+          return null;
+        }
       },
     }),
   ],
