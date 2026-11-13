@@ -5,8 +5,8 @@ import { login } from "@/app/actions/auth";
 import { PasswordInput } from "@/components/password-input";
 import { SubmitButton } from "@/components/submit-button";
 
-export function LoginForm() {
-  const [state, action] = useActionState(login, null);
+export function LoginForm({ initialError }: { initialError?: string }) {
+  const [state, action] = useActionState(login, initialError ? { error: initialError } : null);
 
   return (
     <form action={action} className="login-card">
