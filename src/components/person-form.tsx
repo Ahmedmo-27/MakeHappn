@@ -12,9 +12,21 @@ type TeamOption = { id: string; name: string; leaderId: string | null };
 export function PersonForm({
   teams,
   person,
+  people = [],
 }: {
   teams: TeamOption[];
-  person?: { id: string; name: string; email: string; title?: string; role: Role; teamId: string | null };
+  person?: {
+    id: string;
+    name: string;
+    email: string;
+    title?: string;
+    role: Role;
+    teamId: string | null;
+    jobDescription?: string;
+    weeklyCapacityHours?: number;
+    reportsToId?: string | null;
+  };
+  people?: { id: string; name: string }[];
 }) {
   const action = person ? updatePersonAction : createPersonAction;
   const [state, formAction] = useActionState(action, null as ActionResult | null);
@@ -34,6 +46,23 @@ export function PersonForm({
       <label className="field">
         <span>Job Title / Functional Role</span>
         <input className="input" name="title" defaultValue={person?.title} placeholder="e.g. Creative Lead, Project & Delivery Lead" />
+      </label>
+      <label className="field">
+        <span>Job description</span>
+        <textarea className="textarea" name="jobDescription" defaultValue={person?.jobDescription} rows={3} />
+      </label>
+      <label className="field">
+        <span>Weekly capacity (hours)</span>
+        <input className="input" name="weeklyCapacityHours" type="number" min="0" max="80" defaultValue={person?.weeklyCapacityHours ?? 40} />
+      </label>
+      <label className="field">
+        <span>Reports to</span>
+        <select className="select" name="reportsToId" defaultValue={person?.reportsToId ?? ""}>
+          <option value="">No manager</option>
+          {(people ?? []).filter((candidate) => candidate.id !== person?.id).map((candidate) => (
+            <option key={candidate.id} value={candidate.id}>{candidate.name}</option>
+          ))}
+        </select>
       </label>
       <label className="field">
         <span>Email</span>

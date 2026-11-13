@@ -33,6 +33,11 @@ export async function createCollectiveMemberAction(
       phone,
       location,
       notes,
+      rateAmount: Number(field(formData, "rateAmount")) || 0,
+      rateUnit: field(formData, "rateUnit") || "day",
+      commercialTerms: field(formData, "commercialTerms"),
+      availability: field(formData, "availability"),
+      pastWorkNotes: field(formData, "pastWorkNotes"),
     });
 
     refresh();

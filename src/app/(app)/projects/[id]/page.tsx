@@ -7,6 +7,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
+import { listProduction } from "@/services/studio-ops";
+import { createProductionFormAction } from "@/app/actions/studio-ops";
 import { Invoice } from "@/models/Invoice";
 import { PurchaseOrder } from "@/models/PurchaseOrder";
 import {
@@ -49,11 +51,12 @@ async function ProjectOverview({
     ? ((await searchParams) as Record<string, string | string[] | undefined>)
     : ({} as Record<string, string | string[] | undefined>);
 
-  const [user, project, invoices, purchaseOrders] = await Promise.all([
+  const [user, project, invoices, purchaseOrders, production] = await Promise.all([
     getCurrentUser(),
     getProjectById(id),
     Invoice.find({ projectId: id }).lean(),
     PurchaseOrder.find({ projectId: id }).lean(),
+    listProduction(id),
   ]);
 
   if (!project) notFound();
@@ -81,6 +84,29 @@ async function ProjectOverview({
   return (
     <div className="stack" style={{ gap: "1.5rem" }}>
       <Banner error={error} notice={notice} />
+
+      <section className="card stack">
+        <h2 style={{ margin: 0 }}>Production and installation</h2>
+        {production.length === 0 ? <p className="muted">No fabrication, installation, or handover updates yet.</p> : production.map((item) => (
+          <p key={String(item._id)} className="muted">{item.area} · {item.percent}% · {item.note}</p>
+        ))}
+        {isLeadOrOwner ? (
+          <form action={createProductionFormAction} className="stack">
+            <input type="hidden" name="projectId" value={id} />
+            <label className="field">
+              <span>Area</span>
+              <select className="select" name="area">
+                <option value="fabrication">Fabrication</option>
+                <option value="installation">Installation</option>
+                <option value="handover">Handover</option>
+              </select>
+            </label>
+            <label className="field"><span>Percent complete</span><input className="input" name="percent" type="number" min="0" max="100" required /></label>
+            <label className="field"><span>Note</span><input className="input" name="note" /></label>
+            <SubmitButton>Save progress</SubmitButton>
+          </form>
+        ) : null}
+      </section>
 
       {/* Top Grid: Stage Advancement & Status Controls */}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "1.5rem" }}>

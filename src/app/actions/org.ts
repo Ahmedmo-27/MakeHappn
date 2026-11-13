@@ -32,6 +32,9 @@ export async function createPersonAction(
       password: assertPassword(String(formData.get("password") ?? "")),
       role: roleValue,
       teamId: roleValue === "owner" ? null : field(formData, "teamId") || null,
+      jobDescription: field(formData, "jobDescription"),
+      weeklyCapacityHours: Number(field(formData, "weeklyCapacityHours")) || 40,
+      reportsToId: field(formData, "reportsToId") || null,
     });
     refresh();
   } catch (error) {
@@ -58,6 +61,9 @@ export async function updatePersonAction(
       password: password ? assertPassword(password) : undefined,
       role: roleValue,
       teamId: roleValue === "owner" ? null : field(formData, "teamId") || null,
+      jobDescription: field(formData, "jobDescription"),
+      weeklyCapacityHours: Number(field(formData, "weeklyCapacityHours")) || 40,
+      reportsToId: field(formData, "reportsToId") || null,
     });
     refresh();
   } catch (error) {

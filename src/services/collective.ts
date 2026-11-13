@@ -26,6 +26,11 @@ export async function createCollectiveMember(input: {
   phone?: string;
   location?: string;
   notes?: string;
+  rateAmount?: number;
+  rateUnit?: string;
+  commercialTerms?: string;
+  availability?: string;
+  pastWorkNotes?: string;
   relationshipOwnerId?: string;
 }): Promise<ICollectiveMember> {
   await connectDB();
@@ -42,6 +47,11 @@ export async function createCollectiveMember(input: {
     phone: input.phone?.trim() ?? "",
     location: input.location?.trim() ?? "",
     notes: input.notes?.trim() ?? "",
+    rateAmount: input.rateAmount ?? 0,
+    rateUnit: input.rateUnit?.trim() || "day",
+    commercialTerms: input.commercialTerms?.trim() ?? "",
+    availability: input.availability?.trim() ?? "",
+    pastWorkNotes: input.pastWorkNotes?.trim() ?? "",
     relationshipOwnerId: input.relationshipOwnerId ? new Types.ObjectId(input.relationshipOwnerId) : null,
     rating: 5,
     status: "vetted",

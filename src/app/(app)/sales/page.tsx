@@ -12,6 +12,14 @@ import {
   convertLeadFormAction,
 } from "@/app/actions/commercial";
 import {
+  completeFollowUpFormAction,
+  createFollowUpFormAction,
+  createProposalFormAction,
+  createSalesTargetFormAction,
+} from "@/app/actions/studio-ops";
+import { listFollowUps, listProposals, listSalesTargets } from "@/services/studio-ops";
+import { PROPOSAL_STATUSES } from "@/models/StudioOps";
+import {
   STUDIO_PRODUCT_LABELS,
   CURRENCIES,
   type StudioProduct,
@@ -36,16 +44,21 @@ async function SalesPipeline({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  const [, params, leads] = await Promise.all([
+  const [user, params, leads, proposals, followUps, targets] = await Promise.all([
     getCurrentUser(),
     searchParams,
     listLeads(),
+    listProposals(),
+    listFollowUps(),
+    listSalesTargets(),
   ]);
   const flash = readMessage(params);
 
-  const totalPipelineValue = leads
-    .filter((l) => l.stage !== "lost" && l.stage !== "won")
-    .reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
+  const openLeads = leads.filter((l) => l.stage !== "lost" && l.stage !== "won");
+  const totalPipelineValue = openLeads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
+  const weights: Record<string, number> = { inquiry: 0.2, discovery: 0.4, proposal: 0.6 };
+  const forecast = openLeads.reduce((sum, lead) => sum + (lead.estimatedValue || 0) * (weights[lead.stage] ?? 0), 0);
+  const targetTotal = targets.reduce((sum, target) => sum + target.amount, 0);
 
   const columns = LEAD_STAGES.filter((s) => s !== "lost").map((stage) => ({
     stage,
@@ -70,6 +83,7 @@ async function SalesPipeline({
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--accent)" }}>
             ${totalPipelineValue.toLocaleString()}
           </div>
+          <p className="hint">Forecast ${Math.round(forecast).toLocaleString()} · target ${targetTotal.toLocaleString()}</p>
         </div>
       </header>
 
@@ -226,6 +240,86 @@ async function SalesPipeline({
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="split" style={{ marginTop: "1.5rem" }}>
+        <section className="panel">
+          <div className="section-head">
+            <h2>Proposals and quotations</h2>
+            <Link href="/clients">Client accounts</Link>
+          </div>
+          {proposals.map((proposal) => {
+            const lead = proposal.leadId as unknown as { companyName?: string } | null;
+            return (
+              <article key={String(proposal._id)} className="card" style={{ marginBottom: "0.6rem" }}>
+                <strong>{proposal.title}</strong>
+                <p className="muted">{lead?.companyName} · {proposal.status} · ${proposal.amount.toLocaleString()}</p>
+                <p className="hint">In: {proposal.scopeIncluded || "—"} · Out: {proposal.scopeExcluded || "—"}</p>
+                <p className="hint">{proposal.paymentTerms}</p>
+              </article>
+            );
+          })}
+          <form action={createProposalFormAction} className="stack">
+            <label className="field">
+              <span>Lead</span>
+              <select className="select" name="leadId" required>
+                {leads.map((lead) => <option key={lead._id.toString()} value={lead._id.toString()}>{lead.companyName}</option>)}
+              </select>
+            </label>
+            <label className="field"><span>Title</span><input className="input" name="title" required /></label>
+            <label className="field"><span>Scope included</span><textarea className="textarea" name="scopeIncluded" rows={2} /></label>
+            <label className="field"><span>Scope excluded</span><textarea className="textarea" name="scopeExcluded" rows={2} /></label>
+            <label className="field"><span>Assumptions</span><textarea className="textarea" name="assumptions" rows={2} /></label>
+            <label className="field"><span>Amount</span><input className="input" name="amount" type="number" min="0" /></label>
+            <label className="field"><span>Payment terms</span><input className="input" name="paymentTerms" /></label>
+            <label className="field">
+              <span>Status</span>
+              <select className="select" name="status">
+                {PROPOSAL_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+            </label>
+            <SubmitButton>Save proposal</SubmitButton>
+          </form>
+        </section>
+        <section className="stack">
+          <div className="panel">
+            <h2>Follow-ups and meetings</h2>
+            {followUps.map((item) => (
+              <div key={String(item._id)} className="row" style={{ marginBottom: "0.5rem" }}>
+                <span>{item.done ? "Done" : "Open"} · {item.title}</span>
+                {!item.done ? (
+                  <form action={completeFollowUpFormAction}>
+                    <input type="hidden" name="id" value={String(item._id)} />
+                    <SubmitButton variant="ghost">Complete</SubmitButton>
+                  </form>
+                ) : null}
+              </div>
+            ))}
+            <form action={createFollowUpFormAction} className="stack">
+              <label className="field">
+                <span>Lead</span>
+                <select className="select" name="leadId">
+                  <option value="">General</option>
+                  {leads.map((lead) => <option key={lead._id.toString()} value={lead._id.toString()}>{lead.companyName}</option>)}
+                </select>
+              </label>
+              <label className="field"><span>Next action</span><input className="input" name="title" required /></label>
+              <label className="field"><span>When</span><input className="input" type="date" name="when" required /></label>
+              <label className="field"><span>Notes</span><input className="input" name="notes" /></label>
+              <SubmitButton>Schedule</SubmitButton>
+            </form>
+          </div>
+          {user.role === "owner" ? (
+            <form action={createSalesTargetFormAction} className="card form-card stack">
+              <h2>Sales target</h2>
+              <label className="field"><span>Label</span><input className="input" name="label" placeholder="Q4 new business" /></label>
+              <label className="field"><span>Year</span><input className="input" name="year" type="number" defaultValue={new Date().getFullYear()} /></label>
+              <label className="field"><span>Quarter</span><input className="input" name="quarter" type="number" min="1" max="4" defaultValue={1} /></label>
+              <label className="field"><span>Amount</span><input className="input" name="amount" type="number" min="0" required /></label>
+              <SubmitButton>Save target</SubmitButton>
+            </form>
+          ) : null}
+        </section>
       </div>
     </div>
   );

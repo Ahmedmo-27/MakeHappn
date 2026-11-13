@@ -10,10 +10,14 @@ import { Wordmark } from "@/components/wordmark";
 const links = [
   { href: "/dashboard", label: "Command Center", ownerOnly: false },
   { href: "/projects", label: "Projects", ownerOnly: false },
+  { href: "/tasks", label: "Tasks", ownerOnly: false },
   { href: "/sales", label: "Sales & Pipeline", ownerOnly: false },
-  { href: "/collective", label: "Collective", ownerOnly: false },
+  { href: "/clients", label: "Clients", ownerOnly: false },
+  { href: "/finance", label: "Finance", ownerOnly: false },
+  { href: "/marketing", label: "Marketing", ownerOnly: false },
+  { href: "/collective", label: "MH Network", ownerOnly: false },
   { href: "/reports", label: "Reports", ownerOnly: false },
-  { href: "/people", label: "People", ownerOnly: true },
+  { href: "/people", label: "Team", ownerOnly: true },
   { href: "/teams", label: "Lanes & Teams", ownerOnly: true },
 ];
 

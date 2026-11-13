@@ -7,6 +7,9 @@ import { formatDate, readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { listProjects } from "@/services/projects";
 import { listLeads } from "@/services/commercial";
+import { listDecisions, listGoals } from "@/services/studio-ops";
+import { createDecisionFormAction, createGoalFormAction, decideFormAction } from "@/app/actions/studio-ops";
+import { SubmitButton } from "@/components/submit-button";
 import { connectDB } from "@/lib/db";
 import { Task } from "@/models/Task";
 import { Invoice } from "@/models/Invoice";
@@ -65,7 +68,7 @@ async function Dashboard({
   const view = typeof params.view === "string" ? params.view : "overview";
   const isExec = user.role === "owner" || !!user.isExecutive;
 
-  const [projects, leads, allInvoices, activeTasks, rosterUsers, pendingDeliverables, lanes] = await Promise.all([
+  const [projects, leads, allInvoices, activeTasks, rosterUsers, pendingDeliverables, lanes, goals, decisions] = await Promise.all([
     listProjects(),
     listLeads(),
     Invoice.find().populate("projectId", "code name").lean(),
@@ -80,6 +83,8 @@ async function Dashboard({
       .sort({ updatedAt: -1 })
       .lean(),
     Team.find().sort({ createdAt: 1 }).lean(),
+    listGoals(),
+    listDecisions(),
   ]);
 
   const activeProjects = projects.filter((p) => p.status !== "closed");
@@ -205,6 +210,42 @@ async function Dashboard({
               </div>
             )}
           </div>
+
+          {isExec ? (
+            <div className="split">
+              <section className="panel">
+                <div className="section-head"><h2>Quarterly goals</h2></div>
+                {goals.length === 0 ? <p className="muted">No goals for this year yet.</p> : goals.map((goal) => (
+                  <p key={String(goal._id)}><strong>Q{goal.quarter} {goal.year}</strong> · {goal.title} · {goal.progress}% · {goal.target}</p>
+                ))}
+                <form action={createGoalFormAction} className="stack">
+                  <label className="field"><span>Year</span><input className="input" name="year" type="number" defaultValue={now.getFullYear()} /></label>
+                  <label className="field"><span>Quarter</span><input className="input" name="quarter" type="number" min="1" max="4" defaultValue={Math.floor(now.getMonth() / 3) + 1} /></label>
+                  <label className="field"><span>Goal</span><input className="input" name="title" required /></label>
+                  <label className="field"><span>Target</span><input className="input" name="target" /></label>
+                  <label className="field"><span>Progress %</span><input className="input" name="progress" type="number" min="0" max="100" defaultValue={0} /></label>
+                  <SubmitButton>Save goal</SubmitButton>
+                </form>
+              </section>
+              <section className="panel">
+                <div className="section-head"><h2>Decisions for the founder</h2></div>
+                {decisions.filter((item) => item.status === "open").map((item) => (
+                  <form key={String(item._id)} action={decideFormAction} className="stack" style={{ marginBottom: "0.8rem" }}>
+                    <strong>{item.title}</strong>
+                    <p className="hint">{item.context}</p>
+                    <input type="hidden" name="id" value={String(item._id)} />
+                    <input className="input" name="outcome" placeholder="What did we decide?" />
+                    <SubmitButton variant="ghost">Record decision</SubmitButton>
+                  </form>
+                ))}
+                <form action={createDecisionFormAction} className="stack">
+                  <label className="field"><span>Decision needed</span><input className="input" name="title" required /></label>
+                  <label className="field"><span>Context</span><input className="input" name="context" /></label>
+                  <SubmitButton>Add to queue</SubmitButton>
+                </form>
+              </section>
+            </div>
+          ) : null}
 
           <div className="split">
             <section className="panel">

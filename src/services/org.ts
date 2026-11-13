@@ -45,6 +45,9 @@ export async function listPeople() {
       email: user.email,
       role: user.role,
       title: user.title ?? "",
+      jobDescription: user.jobDescription ?? "",
+      weeklyCapacityHours: user.weeklyCapacityHours ?? 40,
+      reportsToId: user.reportsToId ? String(user.reportsToId) : null,
       teamId: user.teamId ? String(user.teamId) : null,
       teamName: user.teamId ? (teamName.get(String(user.teamId)) ?? "Unknown team") : null,
     })),
@@ -63,9 +66,17 @@ export async function createPerson(input: {
   password: string;
   role: Role;
   teamId: string | null;
+  jobDescription?: string;
+  weeklyCapacityHours?: number;
+  reportsToId?: string | null;
 }) {
   await connectDB();
   if (!isRole(input.role)) throw new Error("Choose a role");
+  const profile = {
+    jobDescription: input.jobDescription ?? "",
+    weeklyCapacityHours: input.weeklyCapacityHours ?? 40,
+    reportsToId: input.reportsToId ? toObjectId(input.reportsToId) : null,
+  };
   if (input.role === "owner") {
     await User.create({
       name: input.name,
@@ -75,6 +86,7 @@ export async function createPerson(input: {
       role: "owner",
       isExecutive: true,
       teamId: null,
+      ...profile,
     });
     return;
   }
@@ -92,6 +104,7 @@ export async function createPerson(input: {
     passwordHash: await bcrypt.hash(input.password, 12),
     role: input.role,
     teamId: team._id,
+    ...profile,
   });
 
   if (input.role === "leader") {
@@ -108,6 +121,9 @@ export async function updatePerson(input: {
   password?: string;
   role: Role;
   teamId: string | null;
+  jobDescription?: string;
+  weeklyCapacityHours?: number;
+  reportsToId?: string | null;
 }) {
   await connectDB();
   if (!isRole(input.role)) throw new Error("Choose a role");
@@ -143,6 +159,11 @@ export async function updatePerson(input: {
   user.name = input.name;
   user.email = input.email;
   if (input.title !== undefined) user.title = input.title;
+  if (input.jobDescription !== undefined) user.jobDescription = input.jobDescription;
+  if (input.weeklyCapacityHours !== undefined) user.weeklyCapacityHours = input.weeklyCapacityHours;
+  if (input.reportsToId !== undefined) {
+    user.reportsToId = input.reportsToId ? toObjectId(input.reportsToId) : null;
+  }
   user.role = input.role;
   user.teamId = nextTeamId ? toObjectId(nextTeamId) : null;
   if (input.password) user.passwordHash = await bcrypt.hash(input.password, 12);

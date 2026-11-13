@@ -7,7 +7,9 @@ import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { listCollectiveMembers } from "@/services/collective";
+import { allCollaborations } from "@/services/studio-ops";
 import { createCollectiveMemberFormAction } from "@/app/actions/collective";
+import { updateCollectiveFormAction } from "@/app/actions/studio-ops";
 import {
   COLLECTIVE_TYPES,
   COLLECTIVE_TYPE_LABELS,
@@ -36,7 +38,7 @@ async function CollectiveList({
   const flash = readMessage(params);
 
   const typeFilter = typeof params.type === "string" ? (params.type as CollectiveType) : undefined;
-  const members = await listCollectiveMembers(typeFilter);
+  const [members, orders] = await Promise.all([listCollectiveMembers(typeFilter), allCollaborations()]);
 
   return (
     <div className="page page-wide">
@@ -116,9 +118,35 @@ async function CollectiveList({
                 <input name="email" type="email" placeholder="tariq@workshop.local" className="input" />
               </div>
               <div className="form-group">
+                <label>Phone</label>
+                <input name="phone" type="text" className="input" />
+              </div>
+              <div className="form-group">
                 <label>Location</label>
                 <input name="location" type="text" placeholder="e.g. Cairo / Riyadh" className="input" />
               </div>
+            </div>
+            <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
+              <div className="form-group">
+                <label>Rate</label>
+                <input name="rateAmount" type="number" min="0" className="input" />
+              </div>
+              <div className="form-group">
+                <label>Rate unit</label>
+                <input name="rateUnit" type="text" placeholder="day" className="input" />
+              </div>
+              <div className="form-group">
+                <label>Availability</label>
+                <input name="availability" type="text" placeholder="Available from May" className="input" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Commercial terms</label>
+              <input name="commercialTerms" type="text" className="input" />
+            </div>
+            <div className="form-group">
+              <label>Past collaborations</label>
+              <textarea name="pastWorkNotes" rows={2} className="textarea" />
             </div>
 
             <div className="form-group">
@@ -178,6 +206,38 @@ async function CollectiveList({
                 </p>
               ) : null}
 
+              <p className="hint">
+                {m.phone ? `${m.phone} · ` : ""}
+                {m.rateAmount ? `Rate ${m.rateAmount}/${m.rateUnit || "day"} · ` : ""}
+                {m.availability || "Availability not set"}
+              </p>
+              {m.commercialTerms ? <p className="hint">{m.commercialTerms}</p> : null}
+              {m.pastWorkNotes ? <p className="hint">{m.pastWorkNotes}</p> : null}
+              {orders.filter((order) => String(order.collectiveMemberId) === String(m._id)).map((order) => {
+                const project = order.projectId as unknown as { code?: string; name?: string } | null;
+                return <p key={String(order._id)} className="hint">Worked on {project?.code} · {order.scopeDescription}</p>;
+              })}
+              <details>
+                <summary>Edit profile</summary>
+                <form action={updateCollectiveFormAction} className="stack" style={{ marginTop: "0.6rem" }}>
+                  <input type="hidden" name="id" value={m._id.toString()} />
+                  <select className="select" name="type" defaultValue={m.type}>
+                    {COLLECTIVE_TYPES.map((t) => <option key={t} value={t}>{COLLECTIVE_TYPE_LABELS[t]}</option>)}
+                  </select>
+                  <select className="select" name="status" defaultValue={m.status}>
+                    <option value="vetted">Vetted</option>
+                    <option value="active">Active</option>
+                    <option value="on_hold">On hold</option>
+                  </select>
+                  <input className="input" name="phone" defaultValue={m.phone} placeholder="Phone" />
+                  <input className="input" name="rateAmount" type="number" defaultValue={m.rateAmount} />
+                  <input className="input" name="rateUnit" defaultValue={m.rateUnit} />
+                  <input className="input" name="availability" defaultValue={m.availability} placeholder="Availability" />
+                  <input className="input" name="commercialTerms" defaultValue={m.commercialTerms} placeholder="Terms" />
+                  <textarea className="textarea" name="pastWorkNotes" defaultValue={m.pastWorkNotes} rows={2} />
+                  <SubmitButton variant="ghost">Save profile</SubmitButton>
+                </form>
+              </details>
               <div style={{ marginTop: "auto", paddingTop: "0.5rem", borderTop: "1px solid var(--line)", fontSize: "0.8rem", color: "var(--muted)" }}>
                 Status: <strong style={{ color: "var(--good)" }}>{m.status.toUpperCase()}</strong>
               </div>

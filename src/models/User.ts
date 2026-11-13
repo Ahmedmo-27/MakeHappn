@@ -17,6 +17,9 @@ export interface IUser {
   laneIds: Types.ObjectId[];
   teamId: Types.ObjectId | null;
   phone?: string;
+  reportsToId?: Types.ObjectId | null;
+  jobDescription: string;
+  weeklyCapacityHours: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +37,9 @@ const userSchema = new Schema<IUser>(
     laneIds: [{ type: Schema.Types.ObjectId, ref: "Team" }],
     teamId: { type: Schema.Types.ObjectId, ref: "Team", default: null },
     phone: { type: String, trim: true },
+    reportsToId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    jobDescription: { type: String, default: "", trim: true },
+    weeklyCapacityHours: { type: Number, default: 40, min: 0, max: 80 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true },

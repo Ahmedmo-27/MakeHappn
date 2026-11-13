@@ -6,5 +6,7 @@ export function redirectWith(path: string, message?: { error?: string; notice?: 
   if (message?.error) params.set("error", message.error);
   if (message?.notice) params.set("notice", message.notice);
   const query = params.toString();
-  redirect(query ? `${path}?${query}` : path);
+  if (!query) redirect(path);
+  const joiner = path.includes("?") ? "&" : "?";
+  redirect(`${path}${joiner}${query}`);
 }
