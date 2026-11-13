@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { Sticker } from "@/components/brand/sticker";
 import { LoginForm } from "@/components/login-form";
 import { Wordmark } from "@/components/wordmark";
 
 export const metadata = { title: "Sign in" };
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   return (
     <main className="login-screen">
       <section className="login-copy">
@@ -34,8 +39,26 @@ export default function LoginPage() {
         </div>
       </section>
       <section className="login-panel">
-        <LoginForm />
+        <Suspense fallback={<LoginForm />}>
+          <LoginPanel searchParams={searchParams} />
+        </Suspense>
       </section>
     </main>
   );
+}
+
+async function LoginPanel({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const code = typeof params.error === "string" ? params.error : "";
+  const initialError =
+    code === "Configuration"
+      ? "Sign-in is not configured. AUTH_SECRET is missing on the server."
+      : code
+        ? "Invalid email or password"
+        : undefined;
+  return <LoginForm initialError={initialError} />;
 }
