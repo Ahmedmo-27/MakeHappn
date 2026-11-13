@@ -23,8 +23,8 @@
 
 | Category | Score | % |
 |---|---:|---:|
-| **Overall (Flow + UI + Roles)** | **51.5 / 80** | **64%** |
-| Roles | 13.5 / 20 | **68%** |
+| **Overall (Flow + UI + Roles)** | **50.5 / 80** | **63%** |
+| Roles | 12.5 / 20 | **63%** |
 | Flows / workflows | 16.5 / 32 | **52%** |
 | UI / screens (+ brand) | 21.5 / 28 | **77%** |
 
@@ -67,7 +67,7 @@ Backend-only gaps (e.g. server action auth holes) are **not** scored unless they
 | R19 | People / Teams pages require owner/exec | Done | `requireOwner()` | |
 | R20 | Functional identity surfaced in chrome (not only access role) | Partial | Rail shows `roleLabel(user.role)` only | Title/functional role not in rail |
 
-**Roles subtotal: 13.5 / 20 → 68%**
+**Roles subtotal: 12.5 / 20 → 63%** (9 Done + 7 Partial + 4 Missing)
 
 ---
 
