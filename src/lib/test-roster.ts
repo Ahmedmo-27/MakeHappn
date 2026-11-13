@@ -15,6 +15,12 @@ const LANES = {
   communication: "0000000000000000000000b3",
 } as const;
 
+export const TEST_LANES = [
+  { id: LANES.vision, name: "Vision & Design" },
+  { id: LANES.delivery, name: "Project & Delivery" },
+  { id: LANES.communication, name: "Communication" },
+] as const;
+
 export type TestUser = SessionUser & {
   password: string;
 };

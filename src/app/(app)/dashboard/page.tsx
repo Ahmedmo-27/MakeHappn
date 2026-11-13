@@ -10,7 +10,8 @@ import { listLeads } from "@/services/commercial";
 import { listDecisions, listGoals } from "@/services/studio-ops";
 import { createDecisionFormAction, createGoalFormAction, decideFormAction } from "@/app/actions/studio-ops";
 import { SubmitButton } from "@/components/submit-button";
-import { connectDB } from "@/lib/db";
+import { connectDB, orEmpty } from "@/lib/db";
+import { TEST_LANES, TEST_ROSTER } from "@/lib/test-roster";
 import { Task } from "@/models/Task";
 import { Invoice } from "@/models/Invoice";
 import { User } from "@/models/User";
@@ -62,30 +63,32 @@ async function Dashboard({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  await connectDB();
   const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const flash = readMessage(params);
   const view = typeof params.view === "string" ? params.view : "overview";
   const isExec = user.role === "owner" || !!user.isExecutive;
 
-  const [projects, leads, allInvoices, activeTasks, rosterUsers, pendingDeliverables, lanes, goals, decisions] = await Promise.all([
-    listProjects(),
-    listLeads(),
-    Invoice.find().populate("projectId", "code name").lean(),
-    Task.find({ status: { $nin: ["done"] } })
-      .populate("projectId", "code name")
-      .populate("accountableOwnerId", "name title email")
-      .sort({ dueDate: 1 })
-      .lean(),
-    User.find({ isActive: { $ne: false } }).sort({ role: 1, name: 1 }).lean(),
-    Deliverable.find({ status: { $in: ["internal_review", "revision_required"] } })
-      .populate("projectId", "code name contractedRevisionRounds")
-      .sort({ updatedAt: -1 })
-      .lean(),
-    Team.find().sort({ createdAt: 1 }).lean(),
-    listGoals(),
-    listDecisions(),
-  ]);
+  const [projects, leads, allInvoices, activeTasks, rosterUsers, pendingDeliverables, lanes, goals, decisions] = await orEmpty(async () => {
+    await connectDB();
+    return Promise.all([
+      listProjects(),
+      listLeads(),
+      Invoice.find().populate("projectId", "code name").lean(),
+      Task.find({ status: { $nin: ["done"] } })
+        .populate("projectId", "code name")
+        .populate("accountableOwnerId", "name title email")
+        .sort({ dueDate: 1 })
+        .lean(),
+      User.find({ isActive: { $ne: false } }).sort({ role: 1, name: 1 }).lean(),
+      Deliverable.find({ status: { $in: ["internal_review", "revision_required"] } })
+        .populate("projectId", "code name contractedRevisionRounds")
+        .sort({ updatedAt: -1 })
+        .lean(),
+      Team.find().sort({ createdAt: 1 }).lean(),
+      listGoals(),
+      listDecisions(),
+    ]);
+  }, [[], [], [], [], [], [], [], [], []]);
 
   const activeProjects = projects.filter((p) => p.status !== "closed");
   const now = new Date();
@@ -516,11 +519,19 @@ async function Dashboard({
               <h2>Everyone has a lane</h2>
               <p>Projects move across lanes. Bars show each person&apos;s open accountable tasks.</p>
             </div>
-            <span className="badge badge-active">{rosterUsers.length} people</span>
+            <span className="badge badge-active">{(rosterUsers.length ? rosterUsers : TEST_ROSTER).length} people</span>
           </div>
           <div className="lane-grid">
-            {lanes.map((lane, i) => {
-              const members = rosterUsers.filter((u) => u.laneIds?.some((id) => id.toString() === lane._id.toString()));
+            {(lanes.length ? lanes : TEST_LANES.map((lane) => ({ _id: lane.id, name: lane.name }))).map((lane, i) => {
+              const people = rosterUsers.length
+                ? rosterUsers
+                : TEST_ROSTER.map((person) => ({
+                    _id: person.id,
+                    name: person.name,
+                    title: person.title ?? "",
+                    laneIds: person.laneIds ?? [],
+                  }));
+              const members = people.filter((u) => u.laneIds?.some((id) => id.toString() === lane._id.toString()));
               return (
                 <div key={lane._id.toString()} className={`panel lane-col lane-${i % 3}`}>
                   <div className="lane-head">

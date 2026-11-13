@@ -26,3 +26,13 @@ export async function connectDB() {
   state.conn = await state.promise;
   return state.conn;
 }
+
+/** Testing phase: a missing database should leave the page usable. */
+export async function orEmpty<T>(load: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await load();
+  } catch (error) {
+    console.error("[data] unavailable", error instanceof Error ? error.message : error);
+    return fallback;
+  }
+}

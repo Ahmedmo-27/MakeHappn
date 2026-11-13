@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { readMessage } from "@/lib/format";
+import { orEmpty } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { listProjects } from "@/services/projects";
 import {
@@ -40,13 +41,16 @@ async function ProjectsList({
   const statusFilter = typeof params.status === "string" ? (params.status as ProjectStatus) : undefined;
   const productFilter = typeof params.product === "string" ? (params.product as StudioProduct) : undefined;
 
-  const projects = await listProjects({
-    stage: stageFilter,
-    status: statusFilter,
-    product: productFilter,
-    userId: user.id,
-    isExecutive: user.role === "owner",
-  });
+  const projects = await orEmpty(
+    () => listProjects({
+      stage: stageFilter,
+      status: statusFilter,
+      product: productFilter,
+      userId: user.id,
+      isExecutive: user.role === "owner",
+    }),
+    [],
+  );
 
   return (
     <div className="page">

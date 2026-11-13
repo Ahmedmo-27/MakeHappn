@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatCurrency, formatDate, readMessage } from "@/lib/format";
+import { orEmpty } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { createExpenseFormAction } from "@/app/actions/studio-ops";
 import { financeSnapshot } from "@/services/studio-ops";
@@ -31,7 +32,7 @@ async function Finance({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  const [user, params, snapshot] = await Promise.all([getCurrentUser(), searchParams, financeSnapshot()]);
+  const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const flash = readMessage(params);
   const period = typeof params.period === "string" ? params.period : "quarter";
   const canSee = user.role === "owner" || !!user.isExecutive || user.functionalRoles?.includes("finance_operations");
@@ -49,6 +50,14 @@ async function Finance({
       </div>
     );
   }
+
+  const snapshot = await orEmpty(() => financeSnapshot(), {
+    invoices: [],
+    bills: [],
+    orders: [],
+    projects: [],
+    expenses: [],
+  });
 
   const invoices = snapshot.invoices.filter((invoice) => inPeriod(invoice.createdAt, start) || inPeriod(invoice.dueDate, start));
   const expenses = snapshot.expenses.filter((expense) => inPeriod(expense.incurredAt, start));
