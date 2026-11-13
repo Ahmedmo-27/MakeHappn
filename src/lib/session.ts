@@ -5,12 +5,16 @@ import { connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import type { SessionUser } from "@/lib/permissions";
+import { findTestUserById, sessionFromTestUser } from "@/lib/test-roster";
 import { User } from "@/models/User";
 
 export const getCurrentUser = cache(async (): Promise<SessionUser> => {
   await connection();
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+
+  const testUser = findTestUserById(session.user.id);
+  if (testUser) return sessionFromTestUser(testUser);
 
   await connectDB();
   const user = await User.findById(session.user.id);
