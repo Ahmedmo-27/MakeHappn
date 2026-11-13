@@ -3,7 +3,8 @@ import type { Role } from "@/lib/domain";
 
 export const authConfig = {
   trustHost: true,
-  pages: { signIn: "/login" },
+  secret: process.env.AUTH_SECRET,
+  pages: { signIn: "/login", error: "/login" },
   session: { strategy: "jwt" },
   providers: [],
   callbacks: {
