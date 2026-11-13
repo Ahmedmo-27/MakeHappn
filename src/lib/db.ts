@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { ensureTestRoster } from "@/lib/test-roster";
 
 type Cache = {
   conn: typeof mongoose | null;
@@ -21,8 +22,18 @@ export async function connectDB() {
   const state = cache();
   if (state.conn) return state.conn;
   if (!state.promise) {
-    state.promise = mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
+    state.promise = mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 }).then(async (conn) => {
+      // Testing phase: keep a sign-in account for every role, even on a fresh database.
+      await ensureTestRoster();
+      return conn;
+    });
   }
-  state.conn = await state.promise;
+  try {
+    state.conn = await state.promise;
+  } catch (error) {
+    state.conn = null;
+    state.promise = null;
+    throw error;
+  }
   return state.conn;
 }
