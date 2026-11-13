@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth.config";
 import { connectDB } from "@/lib/db";
+import { findTestUserByEmail } from "@/lib/test-roster";
 import { User } from "@/models/User";
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
@@ -19,6 +20,18 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           .trim();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
+
+        const testUser = findTestUserByEmail(email);
+        if (testUser) {
+          if (password !== testUser.password) return null;
+          return {
+            id: testUser.id,
+            name: testUser.name,
+            email: testUser.email,
+            role: testUser.role,
+            teamId: testUser.teamId,
+          };
+        }
 
         try {
           await connectDB();
