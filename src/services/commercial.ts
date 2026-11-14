@@ -7,19 +7,29 @@ import { PurchaseOrder, type IPurchaseOrder } from "@/models/PurchaseOrder";
 import { SupplierBill, type ISupplierBill } from "@/models/SupplierBill";
 import { Invoice, type IInvoice } from "@/models/Invoice";
 import { ChangeRequest, type IChangeRequest, type CRReason } from "@/models/ChangeRequest";
+import { Proposal } from "@/models/StudioOps";
 import { createProject } from "@/services/projects";
 import { type StudioProduct, type StudioCurrency } from "@/lib/domain";
 
-export async function listLeads(stageFilter?: LeadStage) {
+export async function listLeads(filter?: { stage?: LeadStage; assignedLeadId?: string }) {
   await connectDB();
   const query: Record<string, unknown> = {};
-  if (stageFilter) query.stage = stageFilter;
+  if (filter?.stage) query.stage = filter.stage;
+  if (filter?.assignedLeadId && Types.ObjectId.isValid(filter.assignedLeadId)) {
+    query.assignedLeadId = new Types.ObjectId(filter.assignedLeadId);
+  }
 
   return Lead.find(query)
     .populate("assignedLeadId", "name title")
     .populate("convertedProjectId", "code name status")
     .sort({ createdAt: -1 })
     .lean();
+}
+
+export async function countLeadsAssignedTo(userId: string) {
+  await connectDB();
+  if (!Types.ObjectId.isValid(userId)) return 0;
+  return Lead.countDocuments({ assignedLeadId: new Types.ObjectId(userId) });
 }
 
 export async function createLead(input: {
@@ -56,13 +66,36 @@ export async function createLead(input: {
 
 export async function updateLeadStage(leadId: string, stage: LeadStage) {
   await connectDB();
-  return Lead.findByIdAndUpdate(leadId, { $set: { stage } }, { new: true });
+  if (stage === "won") throw new Error("Won is set when an approved proposal is confirmed");
+  const lead = await Lead.findById(leadId);
+  if (!lead) throw new Error("Lead not found");
+  if (lead.stage === "won") throw new Error("This lead is already a confirmed project");
+  lead.stage = stage;
+  await lead.save();
+  return lead;
+}
+
+export async function updateLeadOwner(leadId: string, assignedLeadId: string) {
+  await connectDB();
+  if (!Types.ObjectId.isValid(leadId) || !Types.ObjectId.isValid(assignedLeadId)) {
+    throw new Error("Choose a lead owner");
+  }
+  const lead = await Lead.findByIdAndUpdate(
+    leadId,
+    { $set: { assignedLeadId: new Types.ObjectId(assignedLeadId) } },
+    { new: true },
+  );
+  if (!lead) throw new Error("Lead not found");
+  return lead;
 }
 
 export async function convertLeadToConfirmedProject(leadId: string, actorId: string) {
   await connectDB();
   const lead = await Lead.findById(leadId);
   if (!lead) throw new Error("Lead not found");
+  if (lead.convertedProjectId) throw new Error("This lead is already a project");
+  const approved = await Proposal.findOne({ leadId: lead._id, status: "approved" });
+  if (!approved) throw new Error("Confirm a project only after a proposal is approved");
 
   // Ensure client exists
   let client = await Client.findOne({ name: lead.companyName });

@@ -2,8 +2,8 @@
 
 import { refresh } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
-import { isRole } from "@/lib/domain";
-import { assertEmail, assertName, assertPassword, field } from "@/lib/parse";
+import { isFunctionalRole, isRole, type FunctionalRole } from "@/lib/domain";
+import { assertEmail, assertName, assertPassword, field, fieldList } from "@/lib/parse";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { requireOwner } from "@/lib/session";
@@ -16,6 +16,13 @@ import {
   renameTeam,
   updatePerson,
 } from "@/services/org";
+
+function readFunctionalRoles(formData: FormData): FunctionalRole[] {
+  const selected = fieldList(formData, "functionalRoles");
+  const roles = selected.filter(isFunctionalRole);
+  if (roles.length !== selected.length) throw new Error("Choose a functional role from the list");
+  return roles;
+}
 
 export async function createPersonAction(
   _prev: ActionResult | null,
@@ -35,6 +42,7 @@ export async function createPersonAction(
       jobDescription: field(formData, "jobDescription"),
       weeklyCapacityHours: Number(field(formData, "weeklyCapacityHours")) || 40,
       reportsToId: field(formData, "reportsToId") || null,
+      functionalRoles: readFunctionalRoles(formData),
     });
     refresh();
   } catch (error) {
@@ -64,6 +72,7 @@ export async function updatePersonAction(
       jobDescription: field(formData, "jobDescription"),
       weeklyCapacityHours: Number(field(formData, "weeklyCapacityHours")) || 40,
       reportsToId: field(formData, "reportsToId") || null,
+      functionalRoles: readFunctionalRoles(formData),
     });
     refresh();
   } catch (error) {

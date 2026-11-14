@@ -570,6 +570,7 @@ export async function createProjectTask(input: {
   if (!input.title || input.title.trim().length === 0) {
     throw new Error("Task title is required");
   }
+  if (!input.dueDate) throw new Error("A due date is required");
 
   const ownerId = toObjectId(input.accountableOwnerId);
   const task = await Task.create({

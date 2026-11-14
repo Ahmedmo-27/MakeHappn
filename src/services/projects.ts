@@ -28,6 +28,7 @@ export type CreateProjectInput = {
   startDate?: Date | null;
   deliveryDate?: Date | null;
   bypassedStages?: ProjectStage[];
+  estimatedTotalCost?: number;
   teamUserIds?: string[];
 };
 
@@ -64,12 +65,7 @@ export async function createProject(input: CreateProjectInput): Promise<IProject
     throw new Error("At least one product must be selected");
   }
 
-  // Validate non-bypassable stages
-  const bypassed = input.bypassedStages ?? [];
-  const invalidBypass = bypassed.filter((s) => (NON_BYPASSABLE_STAGES as readonly string[]).includes(s));
-  if (invalidBypass.length > 0) {
-    throw new Error(`Cannot bypass mandatory governance stages: ${invalidBypass.join(", ")}`);
-  }
+  const bypassed = assertBypassable(input.bypassedStages ?? []);
 
   // Generate unique code
   const code = await generateProjectCode();
@@ -106,7 +102,7 @@ export async function createProject(input: CreateProjectInput): Promise<IProject
     quotedValue: input.quotedValue ?? 0,
     approvedContractValue: input.approvedContractValue ?? 0,
     contractedRevisionRounds: input.contractedRevisionRounds ?? 2,
-    estimatedTotalCost: 0,
+    estimatedTotalCost: Math.max(0, input.estimatedTotalCost ?? 0),
     committedTotalCost: 0,
     actualTotalCost: 0,
     milestones,
@@ -116,7 +112,15 @@ export async function createProject(input: CreateProjectInput): Promise<IProject
   return project;
 }
 
-export type UpdateProjectInput = Omit<CreateProjectInput, "bypassedStages">;
+export type UpdateProjectInput = CreateProjectInput;
+
+function assertBypassable(bypassed: ProjectStage[]) {
+  const invalidBypass = bypassed.filter((stage) => (NON_BYPASSABLE_STAGES as readonly string[]).includes(stage));
+  if (invalidBypass.length > 0) {
+    throw new Error(`Cannot bypass mandatory governance stages: ${invalidBypass.join(", ")}`);
+  }
+  return bypassed;
+}
 
 function validIds(ids: string[] = []) {
   return [...new Set(ids)].filter((id) => Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
@@ -137,6 +141,7 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
   if (input.startDate && input.deliveryDate && input.deliveryDate < input.startDate) {
     throw new Error("Delivery date can't be before the start date");
   }
+  const bypassed = assertBypassable(input.bypassedStages ?? []);
 
   const project = await Project.findByIdAndUpdate(
     projectId,
@@ -156,6 +161,8 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
         quotedValue: Math.max(0, input.quotedValue ?? 0),
         approvedContractValue: Math.max(0, input.approvedContractValue ?? 0),
         contractedRevisionRounds: Math.max(1, Math.round(input.contractedRevisionRounds ?? 2)),
+        estimatedTotalCost: Math.max(0, input.estimatedTotalCost ?? 0),
+        bypassedStages: bypassed,
         teamUserIds: validIds(input.teamUserIds),
       },
     },

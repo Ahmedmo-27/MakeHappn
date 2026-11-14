@@ -3,13 +3,19 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
+import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
+import { connectDB } from "@/lib/db";
+import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
+import { User } from "@/models/User";
 import { listLeads } from "@/services/commercial";
 import {
   createLeadFormAction,
   convertLeadFormAction,
+  updateLeadOwnerFormAction,
+  updateLeadStageFormAction,
 } from "@/app/actions/commercial";
 import {
   completeFollowUpFormAction,
@@ -25,6 +31,18 @@ import {
   type StudioProduct,
 } from "@/lib/domain";
 import { LEAD_STAGES, LEAD_STAGE_LABELS } from "@/models/Lead";
+
+function leadIdOf(lead: unknown) {
+  if (lead && typeof lead === "object" && "_id" in lead) return String((lead as { _id: unknown })._id);
+  return lead ? String(lead) : "";
+}
+
+function ownerName(owner: unknown) {
+  if (owner && typeof owner === "object" && "name" in owner && typeof (owner as { name: unknown }).name === "string") {
+    return (owner as { name: string }).name;
+  }
+  return "Unassigned";
+}
 
 export default function SalesPage({
   searchParams,
@@ -44,14 +62,30 @@ async function SalesPipeline({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  const [user, params, leads, proposals, followUps, targets] = await Promise.all([
+  const [user, params, proposals, followUps, targets] = await Promise.all([
     getCurrentUser(),
     searchParams,
-    listLeads(),
     listProposals(),
     listFollowUps(),
     listSalesTargets(),
   ]);
+  await connectDB();
+  const seesAll = canSeeAllSales(user);
+  const [leads, people] = await Promise.all([
+    listLeads(seesAll ? undefined : { assignedLeadId: user.id }),
+    User.find().select("name title").sort({ name: 1 }).lean(),
+  ]);
+  const visibleLeadIds = new Set(leads.map((lead) => lead._id.toString()));
+  const visibleProposals = seesAll
+    ? proposals
+    : proposals.filter((proposal) => visibleLeadIds.has(leadIdOf(proposal.leadId)));
+  const visibleFollowUps = seesAll
+    ? followUps
+    : followUps.filter((item) => !item.leadId || visibleLeadIds.has(leadIdOf(item.leadId)));
+  const approvedLeadIds = new Set(
+    visibleProposals.filter((proposal) => proposal.status === "approved").map((proposal) => leadIdOf(proposal.leadId)),
+  );
+  const movableStages = LEAD_STAGES.filter((stage) => stage !== "won");
   const flash = readMessage(params);
 
   const openLeads = leads.filter((l) => l.stage !== "lost" && l.stage !== "won");
@@ -148,6 +182,17 @@ async function SalesPipeline({
             </div>
 
             <div className="form-group">
+              <label>Lead owner</label>
+              <select name="assignedLeadId" defaultValue={user.id} className="select" required>
+                {people.map((person) => (
+                  <option key={String(person._id)} value={String(person._id)}>
+                    {person.name}{person.title ? ` (${person.title})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
               <label>Inquiry Notes & Scope Brief</label>
               <textarea name="notes" rows={3} placeholder="Initial conversation notes, event vision, timeline expectations..." className="textarea" />
             </div>
@@ -204,6 +249,9 @@ async function SalesPipeline({
                     <p className="muted" style={{ fontSize: "0.85rem", margin: "0.25rem 0" }}>
                       {lead.clientName} ({lead.email})
                     </p>
+                    <p className="muted" style={{ fontSize: "0.8rem", margin: "0.15rem 0" }}>
+                      Owner: {ownerName(lead.assignedLeadId)}
+                    </p>
 
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", margin: "0.25rem 0" }}>
                       {lead.products.map((p) => (
@@ -219,8 +267,28 @@ async function SalesPipeline({
                       </p>
                     ) : null}
 
-                    {/* Stage 04 Project Confirmation Gate */}
-                    {lead.stage === "proposal" || lead.stage === "discovery" ? (
+                    {lead.stage !== "won" ? (
+                      <div className="stack" style={{ marginTop: "0.5rem", gap: "0.4rem", borderTop: "1px solid var(--line)", paddingTop: "0.5rem" }}>
+                        <form action={updateLeadStageFormAction}>
+                          <input type="hidden" name="leadId" value={lead._id.toString()} />
+                          <AutoSubmitSelect name="stage" defaultValue={lead.stage} className="select" style={{ width: "100%", fontSize: "0.8rem" }}>
+                            {movableStages.map((stage) => (
+                              <option key={stage} value={stage}>{LEAD_STAGE_LABELS[stage]}</option>
+                            ))}
+                          </AutoSubmitSelect>
+                        </form>
+                        <form action={updateLeadOwnerFormAction}>
+                          <input type="hidden" name="leadId" value={lead._id.toString()} />
+                          <AutoSubmitSelect name="assignedLeadId" defaultValue={leadIdOf(lead.assignedLeadId)} className="select" style={{ width: "100%", fontSize: "0.8rem" }}>
+                            {people.map((person) => (
+                              <option key={String(person._id)} value={String(person._id)}>{person.name}</option>
+                            ))}
+                          </AutoSubmitSelect>
+                        </form>
+                      </div>
+                    ) : null}
+
+                    {lead.stage === "proposal" && approvedLeadIds.has(lead._id.toString()) ? (
                       <form action={convertLeadFormAction} style={{ marginTop: "0.5rem", borderTop: "1px solid var(--line)", paddingTop: "0.5rem" }}>
                         <input type="hidden" name="leadId" value={lead._id.toString()} />
                         <SubmitButton variant="ghost">
@@ -248,7 +316,7 @@ async function SalesPipeline({
             <h2>Proposals and quotations</h2>
             <Link href="/clients">Client accounts</Link>
           </div>
-          {proposals.map((proposal) => {
+          {visibleProposals.map((proposal) => {
             const lead = proposal.leadId as unknown as { companyName?: string } | null;
             return (
               <article key={String(proposal._id)} className="card" style={{ marginBottom: "0.6rem" }}>
@@ -284,7 +352,7 @@ async function SalesPipeline({
         <section className="stack">
           <div className="panel">
             <h2>Follow-ups and meetings</h2>
-            {followUps.map((item) => (
+            {visibleFollowUps.map((item) => (
               <div key={String(item._id)} className="row" style={{ marginBottom: "0.5rem" }}>
                 <span>{item.done ? "Done" : "Open"} · {item.title}</span>
                 {!item.done ? (

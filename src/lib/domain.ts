@@ -319,3 +319,7 @@ export function isStudioProduct(value: string): value is StudioProduct {
 export function isStudioLane(value: string): value is StudioLane {
   return (STUDIO_LANES as readonly string[]).includes(value);
 }
+
+export function isFunctionalRole(value: string): value is FunctionalRole {
+  return (FUNCTIONAL_ROLES as readonly string[]).includes(value);
+}

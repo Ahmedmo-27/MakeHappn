@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
 import { formatCurrency } from "@/lib/format";
+import { canViewPerformance } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { getStudioAnalytics } from "@/services/analytics";
 
@@ -31,10 +33,9 @@ export default function ReportsPage() {
 
 async function ReportsContent() {
   await connection();
-  const [, analytics] = await Promise.all([
-    getCurrentUser(),
-    getStudioAnalytics(),
-  ]);
+  const user = await getCurrentUser();
+  if (!canViewPerformance(user)) redirect("/dashboard");
+  const analytics = await getStudioAnalytics();
 
   const {
     productStats,

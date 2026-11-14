@@ -5,6 +5,7 @@ import { Types } from "mongoose";
 import { PrintButton } from "@/components/print-button";
 import { Wordmark } from "@/components/wordmark";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { canViewFinancials } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import { Invoice, INVOICE_STATUS_LABELS, type InvoiceStatus } from "@/models/Invoice";
@@ -22,9 +23,7 @@ export default async function InvoiceSheetPage({
   const [user, project] = await Promise.all([getCurrentUser(), getProjectById(id)]);
   if (!project) notFound();
 
-  const lead = project.projectLeadId as unknown as { _id?: unknown } | null;
-  const isLead = lead?._id ? lead._id.toString() === user.id : false;
-  if (user.role !== "owner" && !user.isExecutive && !isLead) {
+  if (!canViewFinancials(user, project)) {
     redirect(`/projects/${id}`);
   }
 

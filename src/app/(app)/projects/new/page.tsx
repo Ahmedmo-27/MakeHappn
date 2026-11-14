@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
+import { canCreateProjectDirectly } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { connectDB } from "@/lib/db";
 import { Client } from "@/models/Client";
@@ -37,6 +39,7 @@ async function NewProjectForm({
     Client.find().sort({ name: 1 }).lean(),
     User.find().sort({ name: 1 }).lean(),
   ]);
+  if (!canCreateProjectDirectly(currentUser)) redirect("/projects");
 
   const flash = readMessage(params);
 

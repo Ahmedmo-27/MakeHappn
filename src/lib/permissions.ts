@@ -127,6 +127,20 @@ export function canViewPerformance(user: SessionUser): boolean {
   return user.role === "owner" || user.isExecutive || user.role === "leader";
 }
 
+export function canViewFinance(user: SessionUser): boolean {
+  return user.role === "owner" || !!user.isExecutive || !!user.functionalRoles?.includes("finance_operations");
+}
+
+/** Owner and executive see every lead. Everyone else is limited to leads they own. */
+export function canSeeAllSales(user: SessionUser): boolean {
+  return user.role === "owner" || !!user.isExecutive;
+}
+
+/** Direct project creation skips sales confirmation, so only owner and executive may use it. */
+export function canCreateProjectDirectly(user: SessionUser): boolean {
+  return user.role === "owner" || !!user.isExecutive;
+}
+
 export function visibleTeamId(user: SessionUser, requested?: string): string | null {
   if (user.role === "owner" || user.isExecutive) return requested || null;
   return user.teamId;

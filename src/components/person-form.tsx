@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createPersonAction, updatePersonAction } from "@/app/actions/org";
-import type { Role } from "@/lib/domain";
+import { FUNCTIONAL_ROLE_LABELS, FUNCTIONAL_ROLES, type FunctionalRole, type Role } from "@/lib/domain";
 import type { ActionResult } from "@/lib/result";
 import { PasswordInput } from "@/components/password-input";
 import { SubmitButton } from "@/components/submit-button";
@@ -20,6 +20,7 @@ export function PersonForm({
     name: string;
     email: string;
     title?: string;
+    functionalRoles?: FunctionalRole[];
     role: Role;
     teamId: string | null;
     jobDescription?: string;
@@ -33,6 +34,7 @@ export function PersonForm({
   const [role, setRole] = useState<Role>(person?.role ?? "member");
   const [teamId, setTeamId] = useState(person?.teamId ?? "");
   const selected = teams.find((team) => team.id === teamId);
+  const functional = new Set(person?.functionalRoles ?? []);
   const leaderTaken =
     role === "leader" && selected?.leaderId && selected.leaderId !== person?.id;
 
@@ -44,9 +46,20 @@ export function PersonForm({
         <input className="input" name="name" defaultValue={person?.name} required />
       </label>
       <label className="field">
-        <span>Job Title / Functional Role</span>
+        <span>Job title</span>
         <input className="input" name="title" defaultValue={person?.title} placeholder="e.g. Creative Lead, Project & Delivery Lead" />
       </label>
+      <fieldset className="field">
+        <legend>Functional roles</legend>
+        <div className="check-list" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+          {FUNCTIONAL_ROLES.map((role) => (
+            <label key={role}>
+              <input type="checkbox" name="functionalRoles" value={role} defaultChecked={functional.has(role)} />
+              {FUNCTIONAL_ROLE_LABELS[role]}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <label className="field">
         <span>Job description</span>
         <textarea className="textarea" name="jobDescription" defaultValue={person?.jobDescription} rows={3} />

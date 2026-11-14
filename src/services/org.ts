@@ -1,6 +1,6 @@
 import "server-only";
 import bcrypt from "bcryptjs";
-import { isRole, type Role } from "@/lib/domain";
+import { isFunctionalRole, isRole, type FunctionalRole, type Role } from "@/lib/domain";
 import { connectDB } from "@/lib/db";
 import { escapeRegex } from "@/lib/parse";
 import { sameId, toObjectId } from "@/lib/ids";
@@ -45,6 +45,7 @@ export async function listPeople() {
       email: user.email,
       role: user.role,
       title: user.title ?? "",
+      functionalRoles: (user.functionalRoles ?? []).filter(isFunctionalRole),
       jobDescription: user.jobDescription ?? "",
       weeklyCapacityHours: user.weeklyCapacityHours ?? 40,
       reportsToId: user.reportsToId ? String(user.reportsToId) : null,
@@ -69,6 +70,7 @@ export async function createPerson(input: {
   jobDescription?: string;
   weeklyCapacityHours?: number;
   reportsToId?: string | null;
+  functionalRoles?: FunctionalRole[];
 }) {
   await connectDB();
   if (!isRole(input.role)) throw new Error("Choose a role");
@@ -76,6 +78,7 @@ export async function createPerson(input: {
     jobDescription: input.jobDescription ?? "",
     weeklyCapacityHours: input.weeklyCapacityHours ?? 40,
     reportsToId: input.reportsToId ? toObjectId(input.reportsToId) : null,
+    functionalRoles: input.functionalRoles ?? [],
   };
   if (input.role === "owner") {
     await User.create({
@@ -124,6 +127,7 @@ export async function updatePerson(input: {
   jobDescription?: string;
   weeklyCapacityHours?: number;
   reportsToId?: string | null;
+  functionalRoles?: FunctionalRole[];
 }) {
   await connectDB();
   if (!isRole(input.role)) throw new Error("Choose a role");
@@ -164,6 +168,7 @@ export async function updatePerson(input: {
   if (input.reportsToId !== undefined) {
     user.reportsToId = input.reportsToId ? toObjectId(input.reportsToId) : null;
   }
+  if (input.functionalRoles !== undefined) user.functionalRoles = input.functionalRoles;
   user.role = input.role;
   user.teamId = nextTeamId ? toObjectId(nextTeamId) : null;
   if (input.password) user.passwordHash = await bcrypt.hash(input.password, 12);

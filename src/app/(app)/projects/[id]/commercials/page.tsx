@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/format";
+import { canViewFinancials } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
 import { listCollectiveMembers } from "@/services/collective";
@@ -48,11 +49,7 @@ async function ProjectCommercials({
 
   if (!project) notFound();
 
-  // Role check: Only Owner/Executive or designated Project Lead can view commercials
-  const lead = project.projectLeadId as unknown as { _id?: unknown } | null;
-  const isLead = lead?._id ? lead._id.toString() === user.id : false;
-  const canAccess = user.role === "owner" || user.isExecutive || isLead;
-  if (!canAccess) {
+  if (!canViewFinancials(user, project)) {
     redirect(`/projects/${id}`);
   }
 

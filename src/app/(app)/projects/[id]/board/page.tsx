@@ -146,8 +146,23 @@ async function ProjectBoard({
                   </div>
 
                   <div className="form-group">
-                    <label>Due Date</label>
-                    <input name="dueDate" type="date" className="input" />
+                    <label>Due Date *</label>
+                    <input name="dueDate" type="date" required className="input" />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    Collaborators{" "}
+                    <span className="muted" style={{ fontWeight: "normal" }}>(Anyone other than the accountable owner)</span>
+                  </label>
+                  <div className="check-list" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}>
+                    {boardData.roster.map((person) => (
+                      <label key={person.id}>
+                        <input type="checkbox" name="collaboratorIds" value={person.id} />
+                        {person.name}
+                      </label>
+                    ))}
                   </div>
                 </div>
 
@@ -263,6 +278,9 @@ async function ProjectBoard({
 
                     <div style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.25rem" }}>
                       Accountable: <strong>{task.owner?.name ?? "Unassigned"}</strong>
+                      {task.collaborators.length > 0 ? (
+                        <span> · with {task.collaborators.map((person) => person.name).filter(Boolean).join(", ")}</span>
+                      ) : null}
                     </div>
 
                     {task.dueDate ? (

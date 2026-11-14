@@ -4,6 +4,10 @@ import { STUDIO_PRODUCTS, CURRENCIES, type StudioProduct, type StudioCurrency } 
 export const LEAD_STAGES = ["inquiry", "discovery", "proposal", "won", "lost"] as const;
 export type LeadStage = (typeof LEAD_STAGES)[number];
 
+export function isLeadStage(value: string): value is LeadStage {
+  return (LEAD_STAGES as readonly string[]).includes(value);
+}
+
 export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   inquiry: "01 Lead / Inquiry",
   discovery: "02 Discovery & Qual",

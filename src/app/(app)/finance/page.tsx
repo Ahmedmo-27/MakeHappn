@@ -5,6 +5,7 @@ import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatCurrency, formatDate, readMessage } from "@/lib/format";
 import { orEmpty } from "@/lib/db";
+import { canViewFinance } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { createExpenseFormAction } from "@/app/actions/studio-ops";
 import { financeSnapshot } from "@/services/studio-ops";
@@ -35,7 +36,7 @@ async function Finance({
   const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const flash = readMessage(params);
   const period = typeof params.period === "string" ? params.period : "quarter";
-  const canSee = user.role === "owner" || !!user.isExecutive || user.functionalRoles?.includes("finance_operations");
+  const canSee = canViewFinance(user);
   const now = new Date();
   const start = new Date(now);
   if (period === "month") start.setMonth(now.getMonth() - 1);

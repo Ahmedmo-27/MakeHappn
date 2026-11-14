@@ -6,10 +6,15 @@ import { assertName, field, fieldList } from "@/lib/parse";
 import { parseDateInput } from "@/lib/format";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
+import { connectDB } from "@/lib/db";
+import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
+import { Lead, isLeadStage } from "@/models/Lead";
 import {
   createLead,
   convertLeadToConfirmedProject,
+  updateLeadOwner,
+  updateLeadStage,
   createPurchaseOrder,
   recordSupplierBill,
   createClientInvoice,
@@ -34,6 +39,7 @@ export async function createLeadAction(
     const currency = (field(formData, "currency") || "USD") as StudioCurrency;
     const notes = field(formData, "notes");
     const products = fieldList(formData, "products").filter(isStudioProduct);
+    const assignedLeadId = field(formData, "assignedLeadId") || user.id;
 
     await createLead({
       clientName,
@@ -44,7 +50,7 @@ export async function createLeadAction(
       estimatedValue,
       currency,
       notes,
-      assignedLeadId: user.id,
+      assignedLeadId,
     });
 
     refresh();
@@ -61,6 +67,45 @@ export async function createLeadFormAction(formData: FormData): Promise<void> {
     redirectWith("/sales", { notice: result.notice });
   } else {
     redirectWith("/sales", { error: result.error });
+  }
+}
+
+async function assertCanEditLead(leadId: string) {
+  const user = await getCurrentUser();
+  await connectDB();
+  const lead = await Lead.findById(leadId);
+  if (!lead) throw new Error("Lead not found");
+  if (!canSeeAllSales(user) && String(lead.assignedLeadId ?? "") !== user.id) {
+    throw new Error("You can only update leads assigned to you");
+  }
+  return user;
+}
+
+export async function updateLeadStageFormAction(formData: FormData): Promise<void> {
+  const leadId = field(formData, "leadId");
+  const stage = field(formData, "stage");
+  try {
+    await assertCanEditLead(leadId);
+    if (!isLeadStage(stage) || stage === "won") throw new Error("Choose a lead stage");
+    await updateLeadStage(leadId, stage);
+    refresh();
+    redirectWith("/sales", { notice: "Lead stage updated" });
+  } catch (error) {
+    unstable_rethrow(error);
+    redirectWith("/sales", { error: messageOf(error) });
+  }
+}
+
+export async function updateLeadOwnerFormAction(formData: FormData): Promise<void> {
+  const leadId = field(formData, "leadId");
+  try {
+    await assertCanEditLead(leadId);
+    await updateLeadOwner(leadId, field(formData, "assignedLeadId"));
+    refresh();
+    redirectWith("/sales", { notice: "Lead owner updated" });
+  } catch (error) {
+    unstable_rethrow(error);
+    redirectWith("/sales", { error: messageOf(error) });
   }
 }
 

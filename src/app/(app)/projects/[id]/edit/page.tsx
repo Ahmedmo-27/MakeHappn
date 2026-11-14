@@ -72,6 +72,8 @@ async function EditProjectForm({
             quotedValue: project.quotedValue,
             approvedContractValue: project.approvedContractValue,
             contractedRevisionRounds: project.contractedRevisionRounds,
+            estimatedTotalCost: project.estimatedTotalCost,
+            bypassedStages: project.bypassedStages,
             brief: project.brief,
             objectives: project.objectives,
             audience: project.audience,

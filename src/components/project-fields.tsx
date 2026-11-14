@@ -1,4 +1,12 @@
-import { STUDIO_PRODUCT_LABELS, CURRENCIES, type StudioProduct } from "@/lib/domain";
+import {
+  CURRENCIES,
+  NON_BYPASSABLE_STAGES,
+  PROJECT_STAGES,
+  STAGE_LABELS,
+  STUDIO_PRODUCT_LABELS,
+  type ProjectStage,
+  type StudioProduct,
+} from "@/lib/domain";
 
 type Option = { _id: unknown; name: string; title?: string; brandName?: string };
 
@@ -14,6 +22,8 @@ export type ProjectFieldDefaults = {
   quotedValue?: number;
   approvedContractValue?: number;
   contractedRevisionRounds?: number;
+  estimatedTotalCost?: number;
+  bypassedStages?: string[];
   brief?: string;
   objectives?: string;
   audience?: string;
@@ -35,6 +45,10 @@ export function ProjectFields({
 }) {
   const products = defaults.products ?? ["turnkey_experience"];
   const team = new Set(defaults.teamUserIds ?? []);
+  const bypassed = new Set(defaults.bypassedStages ?? []);
+  const bypassableStages = PROJECT_STAGES.filter(
+    (stage) => !(NON_BYPASSABLE_STAGES as readonly ProjectStage[]).includes(stage),
+  );
 
   return (
     <>
@@ -160,6 +174,18 @@ export function ProjectFields({
           />
         </div>
         <div className="form-group">
+          <label htmlFor="estimatedTotalCost">Estimated cost</label>
+          <input
+            id="estimatedTotalCost"
+            name="estimatedTotalCost"
+            type="number"
+            step="any"
+            min="0"
+            defaultValue={defaults.estimatedTotalCost ?? 0}
+            className="input"
+          />
+        </div>
+        <div className="form-group">
           <label htmlFor="contractedRevisionRounds">Revision Rounds</label>
           <input
             id="contractedRevisionRounds"
@@ -170,6 +196,23 @@ export function ProjectFields({
             defaultValue={defaults.contractedRevisionRounds ?? 2}
             className="input"
           />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>
+          Stages this project can skip{" "}
+          <span className="muted" style={{ fontWeight: "normal" }}>
+            (Lead, discovery, proposal, confirmation, kick-off, and close stay required.)
+          </span>
+        </label>
+        <div className="check-list" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))" }}>
+          {bypassableStages.map((stage) => (
+            <label key={stage}>
+              <input type="checkbox" name="bypassedStages" value={stage} defaultChecked={bypassed.has(stage)} />
+              {STAGE_LABELS[stage].number} {STAGE_LABELS[stage].short}
+            </label>
+          ))}
         </div>
       </div>
 

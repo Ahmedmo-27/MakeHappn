@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { SessionUser } from "@/lib/permissions";
-import { roleLabel } from "@/lib/domain";
+import { canViewFinance, canViewPerformance, type SessionUser } from "@/lib/permissions";
+import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
 import { logout } from "@/app/actions/auth";
 import { Wordmark } from "@/components/wordmark";
 
@@ -30,9 +30,21 @@ function initials(name: string) {
     .join("");
 }
 
-export function Rail({ user }: { user: SessionUser }) {
+function identityLabel(user: SessionUser) {
+  if (user.title?.trim()) return user.title.trim();
+  const functional = user.functionalRoles?.[0];
+  if (functional) return FUNCTIONAL_ROLE_LABELS[functional];
+  return roleLabel(user.role);
+}
+
+export function Rail({ user, showSales }: { user: SessionUser; showSales: boolean }) {
   const pathname = usePathname();
-  const visible = links.filter((link) => !link.ownerOnly || user.role === "owner");
+  const visible = links.filter((link) => {
+    if (link.href === "/finance") return canViewFinance(user);
+    if (link.href === "/reports") return canViewPerformance(user);
+    if (link.href === "/sales") return showSales;
+    return !link.ownerOnly || user.role === "owner";
+  });
 
   return (
     <aside className="rail">
@@ -64,7 +76,7 @@ export function Rail({ user }: { user: SessionUser }) {
         <span className="avatar" aria-hidden="true">{initials(user.name)}</span>
         <div className="rail-user-meta">
           <strong>{user.name}</strong>
-          <span>{roleLabel(user.role)}</span>
+          <span>{identityLabel(user)}</span>
         </div>
         <form action={logout}>
           <button className="btn btn-rail" type="submit">Sign out</button>

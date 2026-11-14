@@ -7,7 +7,7 @@ import { assertName, field, fieldList } from "@/lib/parse";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { getCurrentUser } from "@/lib/session";
-import { canManageProject } from "@/lib/permissions";
+import { canCreateProjectDirectly, canManageProject } from "@/lib/permissions";
 import {
   createProject,
   updateProject,
@@ -24,6 +24,7 @@ import {
   CURRENCIES,
   type StudioProduct,
   type StudioCurrency,
+  type ProjectStage,
 } from "@/lib/domain";
 
 /** Parses the shared project form (create + edit). Returns an error message when invalid. */
@@ -57,6 +58,8 @@ function readProjectForm(formData: FormData, fallbackLeadId: string): UpdateProj
     quotedValue: num("quotedValue"),
     approvedContractValue: num("approvedContractValue"),
     contractedRevisionRounds: Math.max(1, Math.round(num("contractedRevisionRounds")) || 2),
+    estimatedTotalCost: num("estimatedTotalCost"),
+    bypassedStages: fieldList(formData, "bypassedStages").filter(isProjectStage) as ProjectStage[],
   };
 }
 
@@ -67,6 +70,9 @@ export async function createProjectAction(
   let projectId = "";
   try {
     const user = await getCurrentUser();
+    if (!canCreateProjectDirectly(user)) {
+      return { ok: false, error: "Projects start from an approved proposal" };
+    }
     const input = readProjectForm(formData, user.id);
     if (typeof input === "string") return { ok: false, error: input };
     const created = await createProject(input);

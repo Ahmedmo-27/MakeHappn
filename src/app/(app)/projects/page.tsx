@@ -5,6 +5,7 @@ import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { readMessage } from "@/lib/format";
 import { orEmpty } from "@/lib/db";
+import { canCreateProjectDirectly } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { listProjects } from "@/services/projects";
 import {
@@ -47,7 +48,7 @@ async function ProjectsList({
       status: statusFilter,
       product: productFilter,
       userId: user.id,
-      isExecutive: user.role === "owner",
+      isExecutive: user.role === "owner" || !!user.isExecutive,
     }),
     [],
   );
@@ -63,11 +64,11 @@ async function ProjectsList({
             Enterprise creative and experiential projects. Track stage gates, products, and multidisciplinary delivery across lanes.
           </p>
         </div>
-        <div>
+        {canCreateProjectDirectly(user) ? (
           <Link className="btn btn-primary" href="/projects/new">
             New Project
           </Link>
-        </div>
+        ) : null}
       </header>
 
       {/* Filter Toolbar */}
@@ -99,10 +100,16 @@ async function ProjectsList({
           <Sticker name="dog" className="sticker-plate empty-sticker" />
           <div>
             <p>No projects found matching the filter.</p>
-            <p className="hint">Start a new project or clear the current product/stage filters.</p>
-            <p className="row">
-              <Link href="/projects/new" className="btn btn-primary">Start a project</Link>
+            <p className="hint">
+              {canCreateProjectDirectly(user)
+                ? "Start a new project or clear the current product/stage filters."
+                : "Projects you lead or belong to show up here. Clear the current product or stage filters to see them."}
             </p>
+            {canCreateProjectDirectly(user) ? (
+              <p className="row">
+                <Link href="/projects/new" className="btn btn-primary">Start a project</Link>
+              </p>
+            ) : null}
           </div>
         </div>
       ) : (

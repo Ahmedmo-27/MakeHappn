@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
 import { ProjectTabs } from "@/components/project-tabs";
-import { canManageProject } from "@/lib/permissions";
+import { canManageProject, canViewFinancials, canViewProject } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
 import {
@@ -41,6 +41,7 @@ async function ProjectFrame({
   const [user, project] = await Promise.all([getCurrentUser(), getProjectById(id)]);
 
   if (!project) notFound();
+  if (!canViewProject(user, project)) notFound();
 
   const client = project.clientId as unknown as { name?: string; brandName?: string } | null;
   const lead = project.projectLeadId as unknown as { _id?: unknown; name?: string; title?: string } | null;
@@ -48,8 +49,7 @@ async function ProjectFrame({
   const stageInfo = STAGE_LABELS[project.stage];
   const currentStageIndex = PROJECT_STAGES.indexOf(project.stage);
 
-  const isLead = lead?._id ? lead._id.toString() === user.id : false;
-  const canViewCommercials = user.role === "owner" || isLead;
+  const canViewCommercials = canViewFinancials(user, project);
   const canEdit = canManageProject(user, project);
 
   return (

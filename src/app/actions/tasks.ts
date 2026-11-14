@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { parseDateInput } from "@/lib/format";
-import { assertName, field } from "@/lib/parse";
+import { assertName, field, fieldList } from "@/lib/parse";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { getCurrentUser, requireOwner } from "@/lib/session";
@@ -136,6 +136,9 @@ export async function createProjectTaskAction(formData: FormData) {
     await getCurrentUser();
     const due = field(formData, "dueDate");
     const dueDate = due ? parseDateInput(due) : null;
+    if (!dueDate) throw new Error("A due date is required");
+    const ownerId = field(formData, "accountableOwnerId");
+    const collaboratorIds = fieldList(formData, "collaboratorIds").filter((id) => id !== ownerId);
     const priority = (field(formData, "priority") || "medium") as "urgent" | "high" | "medium" | "low";
     const taskCategory = (field(formData, "taskCategory") || "deliverable_prerequisite") as
       | "deliverable_prerequisite"
@@ -147,7 +150,8 @@ export async function createProjectTaskAction(formData: FormData) {
       projectId,
       stage: field(formData, "stage") || null,
       laneId: field(formData, "laneId"),
-      accountableOwnerId: field(formData, "accountableOwnerId"),
+      accountableOwnerId: ownerId,
+      collaboratorIds,
       title: assertName(field(formData, "title"), "Title", 160),
       description: field(formData, "description"),
       dueDate,

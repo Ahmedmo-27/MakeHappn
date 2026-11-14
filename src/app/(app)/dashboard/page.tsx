@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { formatDate, readMessage } from "@/lib/format";
+import { canCreateProjectDirectly } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { listProjects } from "@/services/projects";
 import { listLeads } from "@/services/commercial";
@@ -167,9 +168,11 @@ async function Dashboard({
               : `Everything is on track across ${activeProjects.length} live projects.`}
           </p>
         </div>
-        <Link className="btn btn-primary" href="/projects/new">
-          New project <span className="arrow" aria-hidden="true">→</span>
-        </Link>
+        {canCreateProjectDirectly(user) ? (
+          <Link className="btn btn-primary" href="/projects/new">
+            New project <span className="arrow" aria-hidden="true">→</span>
+          </Link>
+        ) : null}
       </header>
 
       <nav className="segmented" aria-label="Dashboard perspective">

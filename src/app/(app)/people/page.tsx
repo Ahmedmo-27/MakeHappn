@@ -3,7 +3,7 @@ import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { PersonForm } from "@/components/person-form";
 import { SubmitButton } from "@/components/submit-button";
-import { roleLabel } from "@/lib/domain";
+import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
 import { formatDate, readMessage } from "@/lib/format";
 import { requireOwner } from "@/lib/session";
 import { listPeople } from "@/services/org";
@@ -63,6 +63,9 @@ async function People({
               </div>
               <p className="muted" style={{ margin: 0 }}>
                 {person.title ? <strong>{person.title} · </strong> : null}
+                {person.functionalRoles?.length ? (
+                  <span>{person.functionalRoles.map((role) => FUNCTIONAL_ROLE_LABELS[role]).join(", ")} · </span>
+                ) : null}
                 {person.jobDescription ? <span> · {person.jobDescription}</span> : null}
                 {person.reportsToId ? <span> · reports to {nameOf.get(person.reportsToId)}</span> : null}
                 <span> · {person.weeklyCapacityHours}h / week</span>
