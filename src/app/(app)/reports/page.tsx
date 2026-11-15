@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { canViewPerformance } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
@@ -35,7 +36,20 @@ async function ReportsContent() {
   await connection();
   const user = await getCurrentUser();
   if (!canViewPerformance(user)) redirect("/dashboard");
-  const analytics = await getStudioAnalytics();
+  const analytics = await orEmpty(() => getStudioAnalytics(), null);
+  if (!analytics) {
+    return (
+      <div className="page">
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">Studio Analytics & Performance</p>
+            <h1 className="page-title">Executive Reports</h1>
+          </div>
+        </header>
+        <p className="lede">{DATA_OFFLINE}</p>
+      </div>
+    );
+  }
 
   const {
     productStats,

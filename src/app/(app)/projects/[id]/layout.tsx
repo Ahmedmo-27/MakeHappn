@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
 import { ProjectTabs } from "@/components/project-tabs";
+import { orEmpty } from "@/lib/db";
 import { canManageProject, canViewFinancials, canViewProject } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { getProjectById } from "@/services/projects";
@@ -38,7 +39,7 @@ async function ProjectFrame({
 }) {
   await connection();
   const { id } = await params;
-  const [user, project] = await Promise.all([getCurrentUser(), getProjectById(id)]);
+  const [user, project] = await Promise.all([getCurrentUser(), orEmpty(() => getProjectById(id), null)]);
 
   if (!project) notFound();
   if (!canViewProject(user, project)) notFound();

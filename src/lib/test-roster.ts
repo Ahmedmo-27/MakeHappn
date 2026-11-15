@@ -182,6 +182,43 @@ export function findTestUserById(id: string): TestUser | undefined {
   return TEST_ROSTER.find((person) => person.id === id);
 }
 
+export function testPeopleView() {
+  return {
+    teams: TEST_LANES.map((lane) => ({
+      id: lane.id,
+      name: lane.name,
+      leaderId: TEST_ROSTER.find((person) => person.role === "leader" && (person.laneIds ?? []).includes(lane.id))?.id ?? null,
+    })),
+    people: TEST_ROSTER.map((person) => ({
+      id: person.id,
+      name: person.name,
+      email: person.email,
+      role: person.role,
+      title: person.title ?? "",
+      functionalRoles: person.functionalRoles ?? [],
+      jobDescription: "",
+      weeklyCapacityHours: 40,
+      reportsToId: null,
+      teamId: person.teamId,
+      teamName: TEST_LANES.find((lane) => lane.id === person.teamId)?.name ?? null,
+    })),
+  };
+}
+
+export function testTeamsView() {
+  return TEST_LANES.map((lane) => ({
+    id: lane.id,
+    name: lane.name,
+    leaderId: TEST_ROSTER.find((person) => person.role === "leader" && (person.laneIds ?? []).includes(lane.id))?.id ?? null,
+    people: TEST_ROSTER.filter((person) => person.teamId === lane.id || (person.laneIds ?? []).includes(lane.id)).map((person) => ({
+      id: person.id,
+      name: person.name,
+      email: person.email,
+      role: person.role,
+    })),
+  }));
+}
+
 export function sessionFromTestUser(person: TestUser): SessionUser {
   return {
     id: person.id,

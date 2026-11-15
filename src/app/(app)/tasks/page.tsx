@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatDate, readMessage } from "@/lib/format";
 import { STATUS_LABEL } from "@/lib/domain";
 import { getCurrentUser } from "@/lib/session";
@@ -32,12 +33,10 @@ async function Tasks({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  const [user, params, tasks, roster] = await Promise.all([
-    getCurrentUser(),
-    searchParams,
-    studioTasks(),
-    rosterForOps(),
-  ]);
+  const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
+  const loaded = await orEmpty(() => Promise.all([studioTasks(), rosterForOps()]), null);
+  const tasks = loaded?.[0] ?? [];
+  const roster = loaded?.[1] ?? [];
   const flash = readMessage(params);
   const view = typeof params.view === "string" ? params.view : "mine";
   const now = new Date();
@@ -76,7 +75,7 @@ async function Tasks({
 
   return (
     <div className="page page-wide">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <p className="kicker">Daily execution</p>

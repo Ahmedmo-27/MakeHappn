@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatCurrency } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { clientAccounts } from "@/services/studio-ops";
@@ -16,7 +17,8 @@ export default function ClientsPage() {
 
 async function Clients() {
   await connection();
-  const [, data] = await Promise.all([getCurrentUser(), clientAccounts()]);
+  const [, loaded] = await Promise.all([getCurrentUser(), orEmpty(() => clientAccounts(), null)]);
+  const data = loaded ?? { clients: [], projects: [], leads: [] };
 
   return (
     <div className="page page-wide">
@@ -28,6 +30,7 @@ async function Clients() {
         </div>
         <Link className="btn btn-primary" href="/sales">Open pipeline</Link>
       </header>
+      {loaded ? null : <p className="lede">{DATA_OFFLINE}</p>}
       <div className="stack">
         {data.clients.map((client) => {
           const projects = data.projects.filter((project) => String(project.clientId) === String(client._id));

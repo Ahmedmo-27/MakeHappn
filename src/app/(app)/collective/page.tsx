@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { listCollectiveMembers } from "@/services/collective";
@@ -38,11 +39,16 @@ async function CollectiveList({
   const flash = readMessage(params);
 
   const typeFilter = typeof params.type === "string" ? (params.type as CollectiveType) : undefined;
-  const [members, orders] = await Promise.all([listCollectiveMembers(typeFilter), allCollaborations()]);
+  const loaded = await orEmpty(
+    () => Promise.all([listCollectiveMembers(typeFilter), allCollaborations()]),
+    null,
+  );
+  const members = loaded?.[0] ?? [];
+  const orders = loaded?.[1] ?? [];
 
   return (
     <div className="page page-wide">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <p className="kicker">Studio Network</p>

@@ -4,8 +4,10 @@ import { Banner, PageFallback } from "@/components/banner";
 import { PersonForm } from "@/components/person-form";
 import { SubmitButton } from "@/components/submit-button";
 import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatDate, readMessage } from "@/lib/format";
 import { requireOwner } from "@/lib/session";
+import { testPeopleView } from "@/lib/test-roster";
 import { listPeople } from "@/services/org";
 import { createReviewFormAction, setLeaveFormAction } from "@/app/actions/studio-ops";
 import { listLeave, listReviews } from "@/services/studio-ops";
@@ -28,17 +30,18 @@ async function People({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireOwner();
-  const [flash, data, leave, reviews] = await Promise.all([
+  const [flash, loaded, leave, reviews] = await Promise.all([
     searchParams.then(readMessage),
-    listPeople(),
-    listLeave(),
-    listReviews(),
+    orEmpty(() => listPeople(), null),
+    orEmpty(() => listLeave(), []),
+    orEmpty(() => listReviews(), []),
   ]);
+  const data = loaded ?? testPeopleView();
   const nameOf = new Map(data.people.map((person) => [person.id, person.name]));
 
   return (
     <div className="page">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <Sticker name="meet-tape" className="people-tape" />

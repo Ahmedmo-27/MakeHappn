@@ -23,9 +23,16 @@ export async function connectDB() {
   if (!state.promise) {
     state.promise = mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
   }
-  state.conn = await state.promise;
-  return state.conn;
+  try {
+    state.conn = await state.promise;
+    return state.conn;
+  } catch (error) {
+    state.promise = null;
+    throw error;
+  }
 }
+
+export const DATA_OFFLINE = "The studio database is not reachable, so this page is empty.";
 
 /** Testing phase: a missing database should leave the page usable. */
 export async function orEmpty<T>(load: () => Promise<T>, fallback: T): Promise<T> {

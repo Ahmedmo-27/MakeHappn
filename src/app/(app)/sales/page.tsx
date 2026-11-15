@@ -6,7 +6,7 @@ import { Banner, PageFallback } from "@/components/banner";
 import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
-import { connectDB } from "@/lib/db";
+import { connectDB, DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { User } from "@/models/User";
@@ -62,19 +62,24 @@ async function SalesPipeline({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  const [user, params, proposals, followUps, targets] = await Promise.all([
-    getCurrentUser(),
-    searchParams,
-    listProposals(),
-    listFollowUps(),
-    listSalesTargets(),
-  ]);
-  await connectDB();
+  const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const seesAll = canSeeAllSales(user);
-  const [leads, people] = await Promise.all([
-    listLeads(seesAll ? undefined : { assignedLeadId: user.id }),
-    User.find().select("name title").sort({ name: 1 }).lean(),
-  ]);
+  const loaded = await orEmpty(async () => {
+    await connectDB();
+    const [proposals, followUps, targets, leads, people] = await Promise.all([
+      listProposals(),
+      listFollowUps(),
+      listSalesTargets(),
+      listLeads(seesAll ? undefined : { assignedLeadId: user.id }),
+      User.find().select("name title").sort({ name: 1 }).lean(),
+    ]);
+    return { proposals, followUps, targets, leads, people };
+  }, null);
+  const proposals = loaded?.proposals ?? [];
+  const followUps = loaded?.followUps ?? [];
+  const targets = loaded?.targets ?? [];
+  const leads = loaded?.leads ?? [];
+  const people = loaded?.people ?? [];
   const visibleLeadIds = new Set(leads.map((lead) => lead._id.toString()));
   const visibleProposals = seesAll
     ? proposals
@@ -102,7 +107,7 @@ async function SalesPipeline({
 
   return (
     <div className="page page-wide">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <p className="kicker">Studio CRM</p>

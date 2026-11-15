@@ -5,8 +5,10 @@ import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { roleLabel } from "@/lib/domain";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { readMessage } from "@/lib/format";
 import { requireOwner } from "@/lib/session";
+import { testTeamsView } from "@/lib/test-roster";
 import { listTeamsWithPeople } from "@/services/org";
 
 export default function TeamsPage({
@@ -27,11 +29,12 @@ async function Teams({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireOwner();
-  const [flash, teams] = await Promise.all([searchParams.then(readMessage), listTeamsWithPeople()]);
+  const [flash, loaded] = await Promise.all([searchParams.then(readMessage), orEmpty(() => listTeamsWithPeople(), null)]);
+  const teams = loaded ?? testTeamsView();
 
   return (
     <div className="page">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <p className="kicker">Studio Organization</p>

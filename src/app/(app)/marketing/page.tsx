@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatDate, readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
 import { createMarketingFormAction } from "@/app/actions/studio-ops";
@@ -32,11 +33,12 @@ async function Marketing({
   const kind = typeof params.kind === "string" && (MARKETING_KINDS as readonly string[]).includes(params.kind)
     ? (params.kind as MarketingKind)
     : undefined;
-  const items = await listMarketing(kind);
+  const loaded = await orEmpty(() => listMarketing(kind), null);
+  const items = loaded ?? [];
 
   return (
     <div className="page page-wide">
-      <Banner error={flash.error} notice={flash.notice} />
+      <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
       <header className="page-header">
         <div>
           <p className="kicker">Brand growth</p>
