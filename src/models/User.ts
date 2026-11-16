@@ -21,6 +21,7 @@ export interface IUser {
   jobDescription: string;
   weeklyCapacityHours: number;
   isActive: boolean;
+  isVacant: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +42,7 @@ const userSchema = new Schema<IUser>(
     jobDescription: { type: String, default: "", trim: true },
     weeklyCapacityHours: { type: Number, default: 40, min: 0, max: 80 },
     isActive: { type: Boolean, default: true },
+    isVacant: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

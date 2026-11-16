@@ -7,15 +7,7 @@ import { assertEmail, assertName, assertPassword, field, fieldList } from "@/lib
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
 import { requireOwner } from "@/lib/session";
-import {
-  createEventType,
-  createPerson,
-  createTeam,
-  promoteLeader,
-  renameEventType,
-  renameTeam,
-  updatePerson,
-} from "@/services/org";
+import { createPerson, createTeam, promoteLeader, renameTeam, updatePerson } from "@/services/org";
 
 function readFunctionalRoles(formData: FormData): FunctionalRole[] {
   const selected = fieldList(formData, "functionalRoles");
@@ -118,29 +110,3 @@ export async function promoteLeaderAction(formData: FormData) {
   }
 }
 
-export async function createEventTypeAction(formData: FormData) {
-  try {
-    await requireOwner();
-    await createEventType(assertName(field(formData, "name"), "Event type", 60));
-    refresh();
-    redirectWith("/event-types", { notice: "Event type added" });
-  } catch (error) {
-    unstable_rethrow(error);
-    redirectWith("/event-types", { error: messageOf(error) });
-  }
-}
-
-export async function renameEventTypeAction(formData: FormData) {
-  try {
-    await requireOwner();
-    await renameEventType(
-      field(formData, "typeId"),
-      assertName(field(formData, "name"), "Event type", 60),
-    );
-    refresh();
-    redirectWith("/event-types", { notice: "Event type renamed" });
-  } catch (error) {
-    unstable_rethrow(error);
-    redirectWith("/event-types", { error: messageOf(error) });
-  }
-}

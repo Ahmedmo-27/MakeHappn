@@ -1,61 +1,22 @@
-import { Types } from "mongoose";
-import { connectDB } from "@/lib/db";
-import {
-  CollectiveMember,
-  type ICollectiveMember,
-  type CollectiveType,
-} from "@/models/CollectiveMember";
+import type { CollectiveType } from "@/models/CollectiveMember";
+import { api } from "@/lib/api-client";
 
-export async function listCollectiveMembers(typeFilter?: CollectiveType) {
-  await connectDB();
-  const query: Record<string, unknown> = {};
-  if (typeFilter) query.type = typeFilter;
-
-  return CollectiveMember.find(query)
-    .populate("relationshipOwnerId", "name title")
-    .sort({ name: 1 })
-    .lean();
-}
-
-export async function createCollectiveMember(input: {
+export interface CollectiveRecord {
+  _id: { toString(): string };
   name: string;
   type: CollectiveType;
-  specialisms: string[];
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  location?: string;
-  notes?: string;
-  rateAmount?: number;
-  rateUnit?: string;
-  commercialTerms?: string;
-  availability?: string;
-  pastWorkNotes?: string;
-  relationshipOwnerId?: string;
-}): Promise<ICollectiveMember> {
-  await connectDB();
-  if (!input.name || input.name.trim().length === 0) {
-    throw new Error("Partner or maker name is required");
-  }
+  specialisms: any[];
+  [key: string]: any;
+}
 
-  const member = await CollectiveMember.create({
-    name: input.name.trim(),
-    type: input.type,
-    specialisms: input.specialisms,
-    contactPerson: input.contactPerson?.trim() ?? "",
-    email: input.email?.trim() ?? "",
-    phone: input.phone?.trim() ?? "",
-    location: input.location?.trim() ?? "",
-    notes: input.notes?.trim() ?? "",
-    rateAmount: input.rateAmount ?? 0,
-    rateUnit: input.rateUnit?.trim() || "day",
-    commercialTerms: input.commercialTerms?.trim() ?? "",
-    availability: input.availability?.trim() ?? "",
-    pastWorkNotes: input.pastWorkNotes?.trim() ?? "",
-    relationshipOwnerId: input.relationshipOwnerId ? new Types.ObjectId(input.relationshipOwnerId) : null,
-    rating: 5,
-    status: "vetted",
-  });
+export function listCollectiveMembers(type?: string) {
+  return api<CollectiveRecord[]>("/collective", { query: { type } });
+}
 
-  return member;
+export function createCollectiveMember(input: unknown) {
+  return api<any>("/collective", { body: input });
+}
+
+export function updateCollectiveMember(id: string, input: unknown) {
+  return api<any>(`/collective/${id}`, { method: "PATCH", body: input });
 }

@@ -6,13 +6,13 @@ import { assertName, field, fieldList } from "@/lib/parse";
 import { parseDateInput } from "@/lib/format";
 import { redirectWith } from "@/lib/redirect";
 import { messageOf, type ActionResult } from "@/lib/result";
-import { connectDB } from "@/lib/db";
 import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
-import { Lead, isLeadStage } from "@/models/Lead";
+import { isLeadStage } from "@/models/Lead";
 import {
   createLead,
   convertLeadToConfirmedProject,
+  getLeadById,
   updateLeadOwner,
   updateLeadStage,
   createPurchaseOrder,
@@ -72,10 +72,12 @@ export async function createLeadFormAction(formData: FormData): Promise<void> {
 
 async function assertCanEditLead(leadId: string) {
   const user = await getCurrentUser();
-  await connectDB();
-  const lead = await Lead.findById(leadId);
+  const lead = await getLeadById(leadId);
   if (!lead) throw new Error("Lead not found");
-  if (!canSeeAllSales(user) && String(lead.assignedLeadId ?? "") !== user.id) {
+  const ownerId = lead.assignedLeadId && typeof lead.assignedLeadId === "object"
+    ? String(lead.assignedLeadId._id ?? lead.assignedLeadId)
+    : String(lead.assignedLeadId ?? "");
+  if (!canSeeAllSales(user) && ownerId !== user.id) {
     throw new Error("You can only update leads assigned to you");
   }
   return user;

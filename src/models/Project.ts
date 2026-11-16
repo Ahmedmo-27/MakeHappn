@@ -48,6 +48,28 @@ export interface IProject {
   objectives: string;
   audience: string;
   location: string;
+  projectType: string;
+  keyRequirements: string;
+  scopeIncluded: string;
+  scopeExcluded: string;
+  mainContactName: string;
+  leadSource: string;
+  paymentTerms: string;
+  contingencyAmount: number;
+  internalEffortHours: number;
+  externalCostEstimate: number;
+  depositReceived: boolean;
+  budgetApproved: boolean;
+  confirmationNotes: string;
+  fxRateToBase: number;
+  revisionFeeRevenue: number;
+  revisionFeeCost: number;
+  revisionFeeDays: number;
+  creativeLeadId?: Types.ObjectId | null;
+  clientFeedback: string;
+  assetLinks: string[];
+  workstreams: Array<{ key: string; name: string; lane: string }>;
+  qualityChecklist: Array<{ label: string; done: boolean }>;
   startDate?: Date | null;
   deliveryDate?: Date | null;
   closeDate?: Date | null;
@@ -134,6 +156,39 @@ const projectSchema = new Schema<IProject>(
     objectives: { type: String, default: "", trim: true },
     audience: { type: String, default: "", trim: true },
     location: { type: String, default: "", trim: true },
+    projectType: { type: String, default: "", trim: true },
+    keyRequirements: { type: String, default: "", trim: true },
+    scopeIncluded: { type: String, default: "", trim: true },
+    scopeExcluded: { type: String, default: "", trim: true },
+    mainContactName: { type: String, default: "", trim: true },
+    leadSource: { type: String, default: "", trim: true },
+    paymentTerms: { type: String, default: "", trim: true },
+    contingencyAmount: { type: Number, default: 0, min: 0 },
+    internalEffortHours: { type: Number, default: 0, min: 0 },
+    externalCostEstimate: { type: Number, default: 0, min: 0 },
+    depositReceived: { type: Boolean, default: false },
+    budgetApproved: { type: Boolean, default: false },
+    confirmationNotes: { type: String, default: "", trim: true },
+    fxRateToBase: { type: Number, default: 1, min: 0 },
+    revisionFeeRevenue: { type: Number, default: 0, min: 0 },
+    revisionFeeCost: { type: Number, default: 0, min: 0 },
+    revisionFeeDays: { type: Number, default: 0, min: 0 },
+    creativeLeadId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    clientFeedback: { type: String, default: "", trim: true },
+    assetLinks: [{ type: String, trim: true }],
+    workstreams: [
+      {
+        key: { type: String, required: true },
+        name: { type: String, required: true },
+        lane: { type: String, default: "" },
+      },
+    ],
+    qualityChecklist: [
+      {
+        label: { type: String, required: true },
+        done: { type: Boolean, default: false },
+      },
+    ],
     startDate: { type: Date, default: null },
     deliveryDate: { type: Date, default: null },
     closeDate: { type: Date, default: null },

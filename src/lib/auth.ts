@@ -1,10 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { authConfig } from "@/lib/auth.config";
-import { connectDB } from "@/lib/db";
+import { apiLogin } from "@/lib/api-client";
+import type { Role } from "@/lib/domain";
 import { findTestUserByEmail } from "@/lib/test-roster";
-import { User } from "@/models/User";
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
   ...authConfig,
@@ -34,20 +33,9 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         }
 
         try {
-          await connectDB();
-          const user = await User.findOne({ email }).select("+passwordHash");
-          if (!user?.passwordHash) return null;
-
-          const matches = await bcrypt.compare(password, user.passwordHash);
-          if (!matches) return null;
-
-          return {
-            id: String(user._id),
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            teamId: user.teamId ? String(user.teamId) : null,
-          };
+          const user = await apiLogin(email, password);
+          if (!user) return null;
+          return { ...user, role: user.role as Role };
         } catch (error) {
           console.error("[auth] credential check failed", error);
           return null;

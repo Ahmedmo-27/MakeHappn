@@ -7,6 +7,7 @@ export const PROPOSAL_STATUSES = [
   "under_discussion",
   "approved",
   "declined",
+  "expired",
 ] as const;
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
 
