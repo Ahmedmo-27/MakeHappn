@@ -104,47 +104,29 @@ async function ProjectFrame({
         ) : null}
       </header>
 
-      {/* 11-Stage Pipeline Visual Tracker */}
-      <div
-        className="card"
-        style={{
-          padding: "0.75rem 1rem",
-          marginBottom: "1.25rem",
-          background: "var(--bg-subtle, var(--surface-2))",
-          border: "1px solid var(--border-subtle, var(--line))",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-          <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>
+      {/* 11-Stage Pipeline Visual Tracker. Not a .card: cards invert ink to black, and this strip sits on the black canvas. */}
+      <div className="stage-pipeline">
+        <div className="stage-pipeline-meta">
+          <span className="stage-pipeline-name">
             STAGE {stageInfo.number}: {stageInfo.title.toUpperCase()}
           </span>
-          <span style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+          <span className="stage-pipeline-phase">
             Macro Phase: <strong>{stageInfo.macroPhase}</strong>
           </span>
         </div>
 
-        <div style={{ display: "flex", gap: "4px", width: "100%", height: "8px" }}>
+        <div className="stage-track" role="img" aria-label={`Stage ${stageInfo.number}: ${stageInfo.title}`}>
           {PROJECT_STAGES.map((st, idx) => {
             const isCompleted = idx < currentStageIndex;
             const isCurrent = idx === currentStageIndex;
             const isBypassed = project.bypassedStages?.includes(st as ProjectStage);
-
-            let bg = "var(--surface-3)";
-            if (isBypassed) bg = "var(--surface-2)";
-            else if (isCompleted) bg = "var(--good)";
-            else if (isCurrent) bg = "var(--accent)";
+            const state = isBypassed ? " skipped" : isCompleted ? " done" : isCurrent ? " current" : "";
 
             return (
-              <div
+              <span
                 key={st}
+                className={`seg${state}`}
                 title={`Stage ${STAGE_LABELS[st].number}: ${STAGE_LABELS[st].short}${isBypassed ? " (Bypassed)" : ""}`}
-                style={{
-                  flex: 1,
-                  background: bg,
-                  borderRadius: "2px",
-                  opacity: isBypassed ? 0.35 : 1,
-                  transition: "background 0.2s",
-                }}
               />
             );
           })}

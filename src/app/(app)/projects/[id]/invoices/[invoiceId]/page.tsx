@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
-import { Types } from "mongoose";
 import { PrintButton } from "@/components/print-button";
 import { Wordmark } from "@/components/wordmark";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { canViewFinancials } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
-import { connectDB } from "@/lib/db";
-import { Invoice, INVOICE_STATUS_LABELS, type InvoiceStatus } from "@/models/Invoice";
+import { INVOICE_STATUS_LABELS, type InvoiceStatus } from "@/models/Invoice";
+import { projectFinanceLists } from "@/services/commercial";
 import { getProjectById } from "@/services/projects";
 
 export default async function InvoiceSheetPage({
@@ -18,17 +17,18 @@ export default async function InvoiceSheetPage({
 }) {
   await connection();
   const { id, invoiceId } = await params;
-  if (!Types.ObjectId.isValid(id) || !Types.ObjectId.isValid(invoiceId)) notFound();
-
-  const [user, project] = await Promise.all([getCurrentUser(), getProjectById(id)]);
+  const [user, project, finance] = await Promise.all([
+    getCurrentUser(),
+    getProjectById(id),
+    projectFinanceLists(id).catch(() => ({ invoices: [] })),
+  ]);
   if (!project) notFound();
 
   if (!canViewFinancials(user, project)) {
     redirect(`/projects/${id}`);
   }
 
-  await connectDB();
-  const invoice = await Invoice.findOne({ _id: invoiceId, projectId: id }).lean();
+  const invoice = (finance.invoices ?? []).find((item: { _id: unknown }) => String(item._id) === invoiceId);
   if (!invoice) notFound();
 
   const client = project.clientId as unknown as {

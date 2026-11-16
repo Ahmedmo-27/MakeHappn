@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Instrument_Serif, JetBrains_Mono, Oooh_Baby } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { Interactions } from "@/components/fx/interactions";
 import "./globals.css";
 
@@ -49,10 +50,20 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const themeBoot = `(function(){try{var t=localStorage.getItem("mh-theme");if(t!=="light"&&t!=="dark")t="dark";var root=document.documentElement;root.dataset.theme=t;root.style.colorScheme=t;var color=t==="light"?"#f6f4f2":"#000000";var themeColor=document.querySelector('meta[name="theme-color"]');if(themeColor)themeColor.setAttribute("content",color);var scheme=document.querySelector('meta[name="color-scheme"]');if(scheme)scheme.setAttribute("content",t);}catch(e){document.documentElement.dataset.theme="dark";}})();`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable} ${script.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${display.variable} ${sans.variable} ${script.variable} ${mono.variable}`}
+    >
       <body>
+        <Script id="mh-theme" strategy="beforeInteractive">
+          {themeBoot}
+        </Script>
         {children}
         <Suspense fallback={null}>
           <Interactions />

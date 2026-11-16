@@ -6,18 +6,15 @@ import { Banner, PageFallback } from "@/components/banner";
 import { formatDate, readMessage } from "@/lib/format";
 import { canCreateProjectDirectly } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
+import { loadCommandCenter } from "@/services/analytics";
 import { listProjects } from "@/services/projects";
 import { listLeads } from "@/services/commercial";
+import { resolvePhaseLeads } from "@/services/org";
 import { listDecisions, listGoals } from "@/services/studio-ops";
 import { createDecisionFormAction, createGoalFormAction, decideFormAction } from "@/app/actions/studio-ops";
 import { SubmitButton } from "@/components/submit-button";
-import { connectDB, orEmpty } from "@/lib/db";
+import { orEmpty } from "@/lib/db";
 import { TEST_LANES, TEST_ROSTER } from "@/lib/test-roster";
-import { Task } from "@/models/Task";
-import { Invoice } from "@/models/Invoice";
-import { User } from "@/models/User";
-import { Team } from "@/models/Team";
-import { Deliverable } from "@/models/Deliverable";
 import {
   MACRO_PHASES,
   PROJECT_STAGES,
@@ -40,6 +37,15 @@ export default function DashboardPage({
 }
 
 const money = (n: number) => `$${Math.round(n).toLocaleString()}`;
+function moneyByCurrency(rows: Array<{ currency?: string; amount: number }>) {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    const currency = row.currency || "USD";
+    totals.set(currency, (totals.get(currency) ?? 0) + row.amount);
+  }
+  if (totals.size === 0) return money(0);
+  return [...totals.entries()].map(([currency, amount]) => `${currency} ${Math.round(amount).toLocaleString()}`).join(" · ");
+}
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
 function HealthBadge({ health }: { health: string }) {
@@ -69,27 +75,23 @@ async function Dashboard({
   const view = typeof params.view === "string" ? params.view : "overview";
   const isExec = user.role === "owner" || !!user.isExecutive;
 
-  const [projects, leads, allInvoices, activeTasks, rosterUsers, pendingDeliverables, lanes, goals, decisions] = await orEmpty(async () => {
-    await connectDB();
+  const [projects, leads, center, goals, decisions, phaseLeads] = await orEmpty(async () => {
     return Promise.all([
       listProjects(),
       listLeads(),
-      Invoice.find().populate("projectId", "code name").lean(),
-      Task.find({ status: { $nin: ["done"] } })
-        .populate("projectId", "code name")
-        .populate("accountableOwnerId", "name title email")
-        .sort({ dueDate: 1 })
-        .lean(),
-      User.find({ isActive: { $ne: false } }).sort({ role: 1, name: 1 }).lean(),
-      Deliverable.find({ status: { $in: ["internal_review", "revision_required"] } })
-        .populate("projectId", "code name contractedRevisionRounds")
-        .sort({ updatedAt: -1 })
-        .lean(),
-      Team.find().sort({ createdAt: 1 }).lean(),
+      loadCommandCenter(),
       listGoals(),
       listDecisions(),
+      resolvePhaseLeads(),
     ]);
-  }, [[], [], [], [], [], [], [], [], []]);
+  }, [[], [], { invoices: [], tasks: [], users: [], deliverables: [], teams: [] }, [], [], {}]);
+  const allInvoices = center.invoices ?? [];
+  const activeTasks = center.tasks ?? [];
+  const rosterUsers = center.users?.length ? center.users : TEST_ROSTER.map((person) => ({ _id: person.id, name: person.name, title: person.title, role: person.role }));
+  const pendingDeliverables = center.deliverables ?? [];
+  const lanes = center.teams?.length
+    ? center.teams
+    : TEST_LANES.map((lane) => ({ _id: lane.id, name: lane.name }));
 
   const activeProjects = projects.filter((p) => p.status !== "closed");
   const now = new Date();
@@ -98,11 +100,15 @@ async function Dashboard({
 
   // KPIs
   const openLeads = leads.filter((l) => l.stage !== "lost" && l.stage !== "won");
+  const pipelineLabel = moneyByCurrency(openLeads.map((lead) => ({ currency: lead.currency, amount: lead.estimatedValue || 0 })));
+  const contractedLabel = moneyByCurrency(activeProjects.map((project) => ({ currency: project.currency, amount: project.approvedContractValue || project.quotedValue || 0 })));
+  const committedLabel = moneyByCurrency(activeProjects.map((project) => ({ currency: project.currency, amount: project.committedTotalCost || 0 })));
   const totalPipelineRevenue = openLeads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
   const totalContractedValue = activeProjects.reduce((sum, p) => sum + (p.approvedContractValue || p.quotedValue || 0), 0);
   const totalActualCost = activeProjects.reduce((sum, p) => sum + (p.actualTotalCost || 0), 0);
   const totalCommittedCost = activeProjects.reduce((sum, p) => sum + (p.committedTotalCost || 0), 0);
-  const totalProjectedMargin = totalContractedValue - (totalActualCost + totalCommittedCost);
+  const singleCurrency = new Set(activeProjects.map((project) => project.currency || "USD")).size <= 1;
+  const totalProjectedMargin = singleCurrency ? totalContractedValue - (totalActualCost + totalCommittedCost) : 0;
 
   const totalInvoiced = allInvoices.reduce((sum, inv) => sum + (inv.amount || 0), 0);
   const totalCollected = allInvoices.filter((inv) => inv.status === "paid").reduce((sum, inv) => sum + (inv.amount || 0), 0);
@@ -120,6 +126,7 @@ async function Dashboard({
 
   const macroPhasesWithProjects = MACRO_PHASES.map((phase) => ({
     ...phase,
+    leads: phaseLeads[phase.id] || phase.leads,
     projects: activeProjects.filter((p) => (phase.stages as readonly string[]).includes(p.stage)),
   }));
 
@@ -189,12 +196,12 @@ async function Dashboard({
           <div className="kpi-grid">
             <div className="kpi">
               <span className="kpi-label">Active contract value</span>
-              <span className="kpi-value">{money(totalContractedValue)}</span>
+              <span className="kpi-value">{contractedLabel}</span>
               <span className="kpi-sub">{activeProjects.length} live projects</span>
             </div>
             <div className="kpi">
               <span className="kpi-label">Sales pipeline</span>
-              <span className="kpi-value">{money(totalPipelineRevenue)}</span>
+              <span className="kpi-value">{pipelineLabel}</span>
               <span className="kpi-sub">{openLeads.length} open opportunities</span>
             </div>
             <div className={`kpi ${atRiskProjects.length > 0 ? "is-danger" : "is-good"}`}>
@@ -421,7 +428,7 @@ async function Dashboard({
             </div>
             <div className="kpi is-accent">
               <span className="kpi-label">Pipeline value</span>
-              <span className="kpi-value">{money(totalPipelineRevenue)}</span>
+              <span className="kpi-value">{pipelineLabel}</span>
               <span className="kpi-sub">Not yet contracted</span>
             </div>
             <div className="kpi is-good">
@@ -534,7 +541,10 @@ async function Dashboard({
                     title: person.title ?? "",
                     laneIds: person.laneIds ?? [],
                   }));
-              const members = people.filter((u) => u.laneIds?.some((id) => id.toString() === lane._id.toString()));
+              const members = people.filter((u) => {
+                const laneIds = "laneIds" in u ? (u.laneIds ?? []) : [];
+                return laneIds.some((id: { toString(): string }) => id.toString() === lane._id.toString());
+              });
               return (
                 <div key={lane._id.toString()} className={`panel lane-col lane-${i % 3}`}>
                   <div className="lane-head">
@@ -580,7 +590,7 @@ async function Dashboard({
             <div className="kpi-grid kpi-grid-3">
               <div className="kpi is-accent">
                 <span className="kpi-label">01 · Contracted</span>
-                <span className="kpi-value">{money(totalContractedValue)}</span>
+                <span className="kpi-value">{contractedLabel}</span>
                 <span className="kpi-sub">Client-approved scope</span>
               </div>
               <div className="kpi">
@@ -595,7 +605,7 @@ async function Dashboard({
               </div>
               <div className="kpi">
                 <span className="kpi-label">04 · Committed</span>
-                <span className="kpi-value">{money(totalCommittedCost)}</span>
+                <span className="kpi-value">{committedLabel}</span>
                 <span className="kpi-sub">Open supplier POs</span>
               </div>
               <div className="kpi is-danger">

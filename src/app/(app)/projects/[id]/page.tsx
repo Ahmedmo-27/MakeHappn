@@ -6,11 +6,10 @@ import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate, formatCurrency } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
+import { projectFinanceLists } from "@/services/commercial";
 import { getProjectById } from "@/services/projects";
 import { listProduction } from "@/services/studio-ops";
 import { createProductionFormAction } from "@/app/actions/studio-ops";
-import { Invoice } from "@/models/Invoice";
-import { PurchaseOrder } from "@/models/PurchaseOrder";
 import {
   advanceStageFormAction,
   updateStatusFormAction,
@@ -51,13 +50,14 @@ async function ProjectOverview({
     ? ((await searchParams) as Record<string, string | string[] | undefined>)
     : ({} as Record<string, string | string[] | undefined>);
 
-  const [user, project, invoices, purchaseOrders, production] = await Promise.all([
+  const [user, project, finance, production] = await Promise.all([
     getCurrentUser(),
     getProjectById(id),
-    Invoice.find({ projectId: id }).lean(),
-    PurchaseOrder.find({ projectId: id }).lean(),
+    projectFinanceLists(id).catch(() => ({ invoices: [], purchaseOrders: [] })),
     listProduction(id),
   ]);
+  const invoices = finance.invoices ?? [];
+  const purchaseOrders = finance.purchaseOrders ?? [];
 
   if (!project) notFound();
 

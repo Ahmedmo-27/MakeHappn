@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Sticker } from "@/components/brand/sticker";
 import { LoginForm } from "@/components/login-form";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
 
 export const metadata = { title: "Sign in" };
@@ -18,7 +19,10 @@ export default function LoginPage({
         <Sticker name="spark" className="sticker-plate login-sticker login-sticker-spark" />
         <div className="login-top">
           <Wordmark href="/" />
-          <Link href="/" className="login-back">← Back to studio</Link>
+          <div className="login-top-actions">
+            <ThemeToggle />
+            <Link href="/" className="login-back">← Back to studio</Link>
+          </div>
         </div>
 
         <div>

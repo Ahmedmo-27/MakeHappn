@@ -6,11 +6,9 @@ import { Banner, PageFallback } from "@/components/banner";
 import { ProjectFields } from "@/components/project-fields";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
-import { connectDB } from "@/lib/db";
 import { canManageProject } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
-import { Client } from "@/models/Client";
-import { User } from "@/models/User";
+import { listDirectory } from "@/services/org";
 import { getProjectById } from "@/services/projects";
 import { updateProjectFormAction } from "@/app/actions/projects";
 
@@ -39,16 +37,14 @@ async function EditProjectForm({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  await connectDB();
   const [{ id }, query, user] = await Promise.all([params, searchParams, getCurrentUser()]);
   const project = await getProjectById(id);
   if (!project) notFound();
   if (!canManageProject(user, project)) redirect(`/projects/${id}/scope`);
 
-  const [clients, users] = await Promise.all([
-    Client.find().sort({ name: 1 }).select("name brandName").lean(),
-    User.find().sort({ name: 1 }).select("name title").lean(),
-  ]);
+  const directory = await listDirectory();
+  const clients = directory.clients;
+  const users = directory.users;
   const flash = readMessage(query);
 
   return (

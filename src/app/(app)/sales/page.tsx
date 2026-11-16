@@ -6,11 +6,11 @@ import { Banner, PageFallback } from "@/components/banner";
 import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
-import { connectDB, DATA_OFFLINE, orEmpty } from "@/lib/db";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
-import { User } from "@/models/User";
 import { listLeads } from "@/services/commercial";
+import { listDirectory } from "@/services/org";
 import {
   createLeadFormAction,
   convertLeadFormAction,
@@ -65,15 +65,14 @@ async function SalesPipeline({
   const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const seesAll = canSeeAllSales(user);
   const loaded = await orEmpty(async () => {
-    await connectDB();
-    const [proposals, followUps, targets, leads, people] = await Promise.all([
+    const [proposals, followUps, targets, leads, directory] = await Promise.all([
       listProposals(),
       listFollowUps(),
       listSalesTargets(),
       listLeads(seesAll ? undefined : { assignedLeadId: user.id }),
-      User.find().select("name title").sort({ name: 1 }).lean(),
+      listDirectory(),
     ]);
-    return { proposals, followUps, targets, leads, people };
+    return { proposals, followUps, targets, leads, people: directory.users };
   }, null);
   const proposals = loaded?.proposals ?? [];
   const followUps = loaded?.followUps ?? [];

@@ -8,10 +8,9 @@ import { SubmitButton } from "@/components/submit-button";
 import { readMessage } from "@/lib/format";
 import { canCreateProjectDirectly } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
-import { connectDB, DATA_OFFLINE, orEmpty } from "@/lib/db";
+import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { TEST_ROSTER } from "@/lib/test-roster";
-import { Client } from "@/models/Client";
-import { User } from "@/models/User";
+import { ensureStudioClient, listDirectory } from "@/services/org";
 import { createProjectFormAction } from "@/app/actions/projects";
 import { ProjectFields } from "@/components/project-fields";
 
@@ -36,28 +35,12 @@ async function NewProjectForm({
   const [currentUser, params] = await Promise.all([getCurrentUser(), searchParams]);
   if (!canCreateProjectDirectly(currentUser)) redirect("/projects");
   const loaded = await orEmpty(async () => {
-    await connectDB();
-    const [clients, users] = await Promise.all([
-      Client.find().sort({ name: 1 }).lean(),
-      User.find().sort({ name: 1 }).lean(),
-    ]);
-    return { clients, users };
+    const [directory, clients] = await Promise.all([listDirectory(), ensureStudioClient()]);
+    return { clients, users: directory.users };
   }, null);
   const flash = readMessage(params);
   const users = loaded?.users ?? TEST_ROSTER.map((person) => ({ _id: person.id, name: person.name, title: person.title }));
-
-  // If no clients exist yet, seed a default client so the user isn't blocked
-  let clientList = loaded?.clients ?? [];
-  if (loaded && clientList.length === 0) {
-    const created = await Client.create({
-      name: "MakeHappen Studio Client",
-      brandName: "MakeHappen Partner",
-      industry: "Experiential & Creative",
-      contacts: [{ name: "Studio Contact", email: "client@makehappen.local", isPrimary: true }],
-      status: "active",
-    });
-    clientList = [created.toObject()];
-  }
+  const clientList = loaded?.clients ?? [];
 
   return (
     <div className="page">

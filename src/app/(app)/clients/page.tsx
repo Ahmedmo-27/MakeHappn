@@ -35,7 +35,7 @@ async function Clients() {
         {data.clients.map((client) => {
           const projects = data.projects.filter((project) => String(project.clientId) === String(client._id));
           const leads = data.leads.filter(
-            (lead) => lead.companyName.toLowerCase() === client.name.toLowerCase() || lead.companyName.toLowerCase() === (client.brandName ?? "").toLowerCase(),
+            (lead) => lead.companyName.toLowerCase() === (client.name ?? "").toLowerCase() || lead.companyName.toLowerCase() === (client.brandName ?? "").toLowerCase(),
           );
           const value = projects.reduce((sum, project) => sum + (project.approvedContractValue || 0), 0);
           return (

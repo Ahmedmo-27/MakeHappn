@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { canViewFinance, canViewPerformance, type SessionUser } from "@/lib/permissions";
 import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
 import { logout } from "@/app/actions/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
 
 const links = [
@@ -78,9 +79,12 @@ export function Rail({ user, showSales }: { user: SessionUser; showSales: boolea
           <strong>{user.name}</strong>
           <span>{identityLabel(user)}</span>
         </div>
-        <form action={logout}>
-          <button className="btn btn-rail" type="submit">Sign out</button>
-        </form>
+        <div className="rail-foot">
+          <ThemeToggle />
+          <form action={logout}>
+            <button className="btn btn-rail" type="submit">Sign out</button>
+          </form>
+        </div>
       </div>
     </aside>
   );

@@ -1,7 +1,39 @@
 /* =========================================================================
    Landing page
    ========================================================================= */
-.lp { position: relative; overflow-x: clip; }
+/* Marketing stays on the black stage even when the studio OS is in light mode. */
+.lp {
+  position: relative;
+  overflow-x: clip;
+  min-height: 100vh;
+  color: #ffffff;
+  background: #000000;
+  color-scheme: dark;
+  --bg: #000000;
+  --bg-2: #000000;
+  --surface: #000000;
+  --surface-2: rgba(225, 220, 216, 0.16);
+  --surface-3: rgba(225, 220, 216, 0.28);
+  --line: rgba(225, 220, 216, 0.22);
+  --line-strong: rgba(225, 220, 216, 0.42);
+  --ink: #ffffff;
+  --ink-2: rgba(255, 255, 255, 0.78);
+  --muted: rgba(225, 220, 216, 0.72);
+  --faint: rgba(225, 220, 216, 0.46);
+  --nude: #e1dcd8;
+  --accent: var(--nude);
+  --accent-ink: #000000;
+  --accent-soft: rgba(225, 220, 216, 0.12);
+  --accent-glow: rgba(225, 220, 216, 0.28);
+  --fill: rgba(255, 255, 255, 0.04);
+  --fill-hover: rgba(255, 255, 255, 0.08);
+  --line-hover: rgba(255, 255, 255, 0.28);
+  --focus: rgba(225, 220, 216, 0.18);
+  --good: #7be3a5;
+  --warn: #ffb547;
+  --danger: #ff6b57;
+  --info: #9db1ff;
+}
 
 /* Nav */
 .lp-nav {

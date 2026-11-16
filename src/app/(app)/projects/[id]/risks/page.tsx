@@ -4,11 +4,10 @@ import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
 import { SubmitButton } from "@/components/submit-button";
 import { formatDate } from "@/lib/format";
-import { connectDB } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { listDirectory } from "@/services/org";
 import { getProjectById } from "@/services/projects";
 import { listProjectRisks } from "@/services/risks";
-import { User } from "@/models/User";
 import {
   createRiskFormAction,
   resolveRiskFormAction,
@@ -49,15 +48,15 @@ async function ProjectRisks({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
-  await connectDB();
   const { id } = await params;
-  const [currentUser, project, risks, users, sParams] = await Promise.all([
+  const [currentUser, project, risks, directory, sParams] = await Promise.all([
     getCurrentUser(),
     getProjectById(id),
     listProjectRisks(id),
-    User.find().sort({ name: 1 }).lean(),
+    listDirectory(),
     searchParams,
   ]);
+  const users = directory.users;
 
   if (!project) notFound();
 

@@ -59,6 +59,9 @@ async function ReportsContent() {
     funnel,
     totalProjectsCount,
     totalClientsCount,
+    revenueByCurrency = [],
+    salesByPeriod = [],
+    deliveryPerformance = { onTime: 0, late: 0, unscheduled: 0 },
   } = analytics;
 
   const totalProductRevenue = productStats.reduce((acc, p) => acc + p.totalRevenue, 0);
@@ -71,9 +74,18 @@ async function ReportsContent() {
           <h1 className="page-title">Executive Reports</h1>
         </div>
         <p className="lead">
-          Cross-cutting visibility into revenue mix, cost variances, sales conversion, and 3-lane studio delivery capacity.
+          Cross-cutting visibility into revenue mix, cost variances, sales conversion, and 3-lane studio delivery capacity. Figures stay in their own currency.
         </p>
       </header>
+
+      <div className="card" style={{ padding: "1.25rem" }}>
+        <h2 style={{ marginTop: 0 }}>Currency, period, and delivery</h2>
+        <p>{revenueByCurrency.map((row: { currency: string; total: number }) => `${row.currency} ${Math.round(row.total).toLocaleString()}`).join(" · ") || "No contracted value yet"}</p>
+        <p className="hint">
+          {salesByPeriod.map((row: { period: string; currency: string; amount: number }) => `${row.period} ${row.currency} ${Math.round(row.amount).toLocaleString()}`).join(" · ") || "No period sales yet"}
+        </p>
+        <p className="hint">On time {deliveryPerformance.onTime} · Late {deliveryPerformance.late} · No delivery date {deliveryPerformance.unscheduled}</p>
+      </div>
 
       {/* Top Level Metric Strip */}
       <div
