@@ -37,22 +37,22 @@ async function Clients() {
           const leads = data.leads.filter(
             (lead) => lead.companyName.toLowerCase() === (client.name ?? "").toLowerCase() || lead.companyName.toLowerCase() === (client.brandName ?? "").toLowerCase(),
           );
+          const openLeads = leads.filter((lead) => lead.stage !== "won");
           const value = projects.reduce((sum, project) => sum + (project.approvedContractValue || 0), 0);
           return (
-            <article key={String(client._id)} className="card stack">
+            <Link
+              key={String(client._id)}
+              href={`/clients/${client._id}`}
+              className="card stack"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
               <div className="row">
                 <h2 style={{ margin: 0 }}>{client.brandName || client.name}</h2>
                 <span className="badge">{client.status}</span>
               </div>
               <p className="muted">{client.industry || "Client"} · payment terms {client.paymentTermsDays} days · lifetime {formatCurrency(value, "USD")}</p>
-              <p className="hint">{client.contacts.map((contact) => `${contact.name} <${contact.email}>`).join(" · ") || "No contacts yet"}</p>
-              {projects.map((project) => (
-                <Link key={String(project._id)} href={`/projects/${project._id}`}>{project.code} · {project.name} · {project.status}</Link>
-              ))}
-              {leads.filter((lead) => lead.stage !== "won").map((lead) => (
-                <p key={String(lead._id)} className="muted">Open lead · {lead.stage} · {formatCurrency(lead.estimatedValue, "USD")}</p>
-              ))}
-            </article>
+              <p className="hint">{projects.length} project{projects.length === 1 ? "" : "s"} · {openLeads.length} open lead{openLeads.length === 1 ? "" : "s"}</p>
+            </Link>
           );
         })}
         {data.clients.length === 0 ? <p className="muted">Clients appear when a lead is converted into a project.</p> : null}

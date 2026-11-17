@@ -228,8 +228,8 @@ export async function submitCloseoutChecklistFormAction(formData: FormData): Pro
   const projectId = field(formData, "projectId");
   const result = await submitCloseoutChecklistAction(null, formData);
   if (result.ok) {
-    redirectWith(`/projects/${projectId}`, { notice: result.notice });
+    redirectWith(`/projects/${projectId}/closeout`, { notice: result.notice });
   } else {
-    redirectWith(`/projects/${projectId}`, { error: result.error });
+    redirectWith(`/projects/${projectId}/closeout`, { error: result.error });
   }
 }

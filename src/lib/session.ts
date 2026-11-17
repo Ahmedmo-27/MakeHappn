@@ -18,7 +18,15 @@ export const getCurrentUser = cache(async (): Promise<SessionUser> => {
   try {
     return await api<SessionUser>("/auth/me");
   } catch {
-    redirect("/login");
+    // Keep the JWT session usable when the API is briefly unreachable
+    // (Instant validation, cold start). Only an absent session should bounce to login.
+    return {
+      id: session.user.id,
+      name: session.user.name ?? "Studio member",
+      email: session.user.email ?? "",
+      role: session.user.role ?? "member",
+      teamId: session.user.teamId ?? null,
+    };
   }
 });
 

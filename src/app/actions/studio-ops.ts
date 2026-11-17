@@ -48,7 +48,7 @@ export async function createGoalFormAction(formData: FormData) {
       progress: num(field(formData, "progress")),
     });
     refresh();
-    redirectWith("/dashboard?view=overview", { notice: "Quarterly goal saved" });
+    redirectWith("/dashboard", { notice: "Quarterly goal saved" });
   } catch (error) {
     unstable_rethrow(error);
     redirectWith("/dashboard", { error: messageOf(error) });
@@ -62,7 +62,7 @@ export async function createDecisionFormAction(formData: FormData) {
     if (!title) throw new Error("A decision needs a title");
     await createDecision(title, field(formData, "context"));
     refresh();
-    redirectWith("/dashboard?view=overview", { notice: "Decision added to the founder queue" });
+    redirectWith("/dashboard", { notice: "Decision added to the founder queue" });
   } catch (error) {
     unstable_rethrow(error);
     redirectWith("/dashboard", { error: messageOf(error) });
@@ -74,7 +74,7 @@ export async function decideFormAction(formData: FormData) {
     await requireOwner();
     await decide(field(formData, "id"), field(formData, "outcome") || "Decided");
     refresh();
-    redirectWith("/dashboard?view=overview", { notice: "Decision recorded" });
+    redirectWith("/dashboard", { notice: "Decision recorded" });
   } catch (error) {
     unstable_rethrow(error);
     redirectWith("/dashboard", { error: messageOf(error) });
@@ -99,10 +99,10 @@ export async function createProposalFormAction(formData: FormData) {
       status: status as ProposalStatus,
     });
     refresh();
-    redirectWith("/sales", { notice: "Proposal recorded" });
+    redirectWith("/sales/proposals", { notice: "Proposal recorded" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/sales", { error: messageOf(error) });
+    redirectWith("/sales/proposals", { error: messageOf(error) });
   }
 }
 
@@ -118,10 +118,10 @@ export async function createFollowUpFormAction(formData: FormData) {
       notes: field(formData, "notes"),
     });
     refresh();
-    redirectWith("/sales", { notice: "Follow-up scheduled" });
+    redirectWith("/sales/activities", { notice: "Follow-up scheduled" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/sales", { error: messageOf(error) });
+    redirectWith("/sales/activities", { error: messageOf(error) });
   }
 }
 
@@ -130,10 +130,10 @@ export async function completeFollowUpFormAction(formData: FormData) {
     await getCurrentUser();
     await completeFollowUp(field(formData, "id"));
     refresh();
-    redirectWith("/sales", { notice: "Follow-up completed" });
+    redirectWith("/sales/activities", { notice: "Follow-up completed" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/sales", { error: messageOf(error) });
+    redirectWith("/sales/activities", { error: messageOf(error) });
   }
 }
 
@@ -147,10 +147,10 @@ export async function createSalesTargetFormAction(formData: FormData) {
       amount: num(field(formData, "amount")),
     });
     refresh();
-    redirectWith("/sales", { notice: "Sales target saved" });
+    redirectWith("/sales/targets", { notice: "Sales target saved" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/sales", { error: messageOf(error) });
+    redirectWith("/sales/targets", { error: messageOf(error) });
   }
 }
 
@@ -175,7 +175,7 @@ export async function createMarketingFormAction(formData: FormData) {
     redirectWith("/marketing", { notice: "Marketing item added" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/marketing", { error: messageOf(error) });
+    redirectWith("/marketing/new", { error: messageOf(error) });
   }
 }
 
@@ -192,10 +192,10 @@ export async function createExpenseFormAction(formData: FormData) {
       incurredAt: day(field(formData, "incurredAt")),
     });
     refresh();
-    redirectWith("/finance", { notice: "Expense recorded" });
+    redirectWith("/finance/expenses", { notice: "Expense recorded" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/finance", { error: messageOf(error) });
+    redirectWith("/finance/expenses", { error: messageOf(error) });
   }
 }
 
@@ -223,12 +223,10 @@ export async function createLeaveFormAction(formData: FormData) {
       reason: field(formData, "reason"),
     });
     refresh();
-    const next = field(formData, "next") === "/tasks" ? "/tasks" : "/people";
-    redirectWith(next, { notice: "Leave request sent" });
+    redirectWith("/people/leave", { notice: "Leave request sent" });
   } catch (error) {
     unstable_rethrow(error);
-    const next = field(formData, "next") === "/tasks" ? "/tasks" : "/people";
-    redirectWith(next, { error: messageOf(error) });
+    redirectWith("/people/leave", { error: messageOf(error) });
   }
 }
 
@@ -239,10 +237,10 @@ export async function setLeaveFormAction(formData: FormData) {
     if (status !== "approved" && status !== "declined") throw new Error("Choose a decision");
     await setLeaveStatus(field(formData, "id"), status);
     refresh();
-    redirectWith("/people", { notice: "Leave updated" });
+    redirectWith("/people/leave", { notice: "Leave updated" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/people", { error: messageOf(error) });
+    redirectWith("/people/leave", { error: messageOf(error) });
   }
 }
 
@@ -257,10 +255,10 @@ export async function createReviewFormAction(formData: FormData) {
       rating: num(field(formData, "rating"), 3),
     });
     refresh();
-    redirectWith("/people", { notice: "Review saved" });
+    redirectWith("/people/reviews", { notice: "Review saved" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/people", { error: messageOf(error) });
+    redirectWith("/people/reviews", { error: messageOf(error) });
   }
 }
 
@@ -278,7 +276,8 @@ export async function createProductionFormAction(formData: FormData) {
       note: field(formData, "note"),
     });
     refresh();
-    redirectWith(`/projects/${field(formData, "projectId")}`, { notice: "Production progress saved" });
+    const projectId = field(formData, "projectId");
+    redirectWith(`/projects/${projectId}/production`, { notice: "Production progress saved" });
   } catch (error) {
     unstable_rethrow(error);
     redirectWith("/projects", { error: messageOf(error) });
@@ -286,6 +285,7 @@ export async function createProductionFormAction(formData: FormData) {
 }
 
 export async function updateCollectiveFormAction(formData: FormData) {
+  const id = field(formData, "id");
   try {
     await getCurrentUser();
     const type = field(formData, "type");
@@ -293,7 +293,7 @@ export async function updateCollectiveFormAction(formData: FormData) {
     const status = field(formData, "status");
     if (status !== "active" && status !== "vetted" && status !== "on_hold") throw new Error("Choose a status");
     await updateCollectiveProfile({
-      id: field(formData, "id"),
+      id,
       phone: field(formData, "phone"),
       rateAmount: num(field(formData, "rateAmount")),
       rateUnit: field(formData, "rateUnit") || "day",
@@ -304,9 +304,9 @@ export async function updateCollectiveFormAction(formData: FormData) {
       status,
     });
     refresh();
-    redirectWith("/collective", { notice: "Network profile updated" });
+    redirectWith(`/collective/${id}`, { notice: "Network profile updated" });
   } catch (error) {
     unstable_rethrow(error);
-    redirectWith("/collective", { error: messageOf(error) });
+    redirectWith(id ? `/collective/${id}` : "/collective", { error: messageOf(error) });
   }
 }

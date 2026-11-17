@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { AutoSubmitSelect } from "@/components/auto-submit-select";
 import { SubmitButton } from "@/components/submit-button";
@@ -11,25 +10,13 @@ import { canSeeAllSales } from "@/lib/permissions";
 import { getCurrentUser } from "@/lib/session";
 import { listLeads } from "@/services/commercial";
 import { listDirectory } from "@/services/org";
+import { listProposals } from "@/services/studio-ops";
 import {
-  createLeadFormAction,
   convertLeadFormAction,
   updateLeadOwnerFormAction,
   updateLeadStageFormAction,
 } from "@/app/actions/commercial";
-import {
-  completeFollowUpFormAction,
-  createFollowUpFormAction,
-  createProposalFormAction,
-  createSalesTargetFormAction,
-} from "@/app/actions/studio-ops";
-import { listFollowUps, listProposals, listSalesTargets } from "@/services/studio-ops";
-import { PROPOSAL_STATUSES } from "@/models/StudioOps";
-import {
-  STUDIO_PRODUCT_LABELS,
-  CURRENCIES,
-  type StudioProduct,
-} from "@/lib/domain";
+import { STUDIO_PRODUCT_LABELS } from "@/lib/domain";
 import { LEAD_STAGES, LEAD_STAGE_LABELS } from "@/models/Lead";
 
 function leadIdOf(lead: unknown) {
@@ -50,7 +37,7 @@ export default function SalesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<div className="page"><PageFallback label="Loading sales pipeline" /></div>}>
+    <Suspense fallback={<PageFallback label="Loading sales pipeline" />}>
       <SalesPipeline searchParams={searchParams} />
     </Suspense>
   );
@@ -65,27 +52,20 @@ async function SalesPipeline({
   const [user, params] = await Promise.all([getCurrentUser(), searchParams]);
   const seesAll = canSeeAllSales(user);
   const loaded = await orEmpty(async () => {
-    const [proposals, followUps, targets, leads, directory] = await Promise.all([
+    const [proposals, leads, directory] = await Promise.all([
       listProposals(),
-      listFollowUps(),
-      listSalesTargets(),
       listLeads(seesAll ? undefined : { assignedLeadId: user.id }),
       listDirectory(),
     ]);
-    return { proposals, followUps, targets, leads, people: directory.users };
+    return { proposals, leads, people: directory.users };
   }, null);
   const proposals = loaded?.proposals ?? [];
-  const followUps = loaded?.followUps ?? [];
-  const targets = loaded?.targets ?? [];
   const leads = loaded?.leads ?? [];
   const people = loaded?.people ?? [];
   const visibleLeadIds = new Set(leads.map((lead) => lead._id.toString()));
   const visibleProposals = seesAll
     ? proposals
     : proposals.filter((proposal) => visibleLeadIds.has(leadIdOf(proposal.leadId)));
-  const visibleFollowUps = seesAll
-    ? followUps
-    : followUps.filter((item) => !item.leadId || visibleLeadIds.has(leadIdOf(item.leadId)));
   const approvedLeadIds = new Set(
     visibleProposals.filter((proposal) => proposal.status === "approved").map((proposal) => leadIdOf(proposal.leadId)),
   );
@@ -96,7 +76,6 @@ async function SalesPipeline({
   const totalPipelineValue = openLeads.reduce((sum, l) => sum + (l.estimatedValue || 0), 0);
   const weights: Record<string, number> = { inquiry: 0.2, discovery: 0.4, proposal: 0.6 };
   const forecast = openLeads.reduce((sum, lead) => sum + (lead.estimatedValue || 0) * (weights[lead.stage] ?? 0), 0);
-  const targetTotal = targets.reduce((sum, target) => sum + target.amount, 0);
 
   const columns = LEAD_STAGES.filter((s) => s !== "lost").map((stage) => ({
     stage,
@@ -105,110 +84,21 @@ async function SalesPipeline({
   }));
 
   return (
-    <div className="page page-wide">
+    <>
       <Banner error={flash.error ?? (loaded ? undefined : DATA_OFFLINE)} notice={flash.notice} />
-      <header className="page-header">
+      <div className="row" style={{ marginBottom: "1.25rem", gap: "1rem", flexWrap: "wrap" }}>
         <div>
-          <p className="kicker">Studio CRM</p>
-          <h1>Sales & Opportunity Pipeline</h1>
-          <p className="lede">
-            Stages 01–04 commercial progression. Track client discovery, scope proposals, and trigger Stage 04 project confirmation upon agreement.
-          </p>
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <Sticker name="crafting-curating" className="sticker-plate header-oval" />
           <span style={{ fontSize: "0.85rem" }} className="muted">Total In-Flight Pipeline</span>
           <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--accent)" }}>
             ${totalPipelineValue.toLocaleString()}
           </div>
-          <p className="hint">Forecast ${Math.round(forecast).toLocaleString()} · target ${targetTotal.toLocaleString()}</p>
+          <p className="hint">Forecast ${Math.round(forecast).toLocaleString()}</p>
         </div>
-      </header>
-
-      {/* New Opportunity Drawer / Form */}
-      <details className="disclosure" style={{ marginBottom: "1.5rem" }}>
-        <summary className="btn btn-primary" style={{ cursor: "pointer" }}>
+        <Link href="/sales/leads/new" className="btn btn-primary" style={{ marginLeft: "auto" }}>
           + Add Client Inquiry / Lead
-        </summary>
-        <div className="card form-card stack" style={{ maxWidth: "720px", marginTop: "1rem", gap: "1.25rem" }}>
-          <div className="form-header">
-            <h3 className="form-title">New Client Opportunity</h3>
-            <p className="form-subtitle">Capture inbound leads, prospect brand briefs, and commercial expectations.</p>
-          </div>
-          <form action={createLeadFormAction} className="stack" style={{ gap: "1.15rem" }}>
-            <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div className="form-group">
-                <label>Company / Brand Name *</label>
-                <input name="companyName" type="text" required placeholder="e.g. Red Sea Global" className="input" />
-              </div>
-              <div className="form-group">
-                <label>Primary Contact Person *</label>
-                <input name="clientName" type="text" required placeholder="e.g. Fahad Al-Saud" className="input" />
-              </div>
-            </div>
+        </Link>
+      </div>
 
-            <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-              <div className="form-group">
-                <label>Email *</label>
-                <input name="email" type="email" required placeholder="contact@brand.com" className="input" />
-              </div>
-              <div className="form-group">
-                <label>Phone</label>
-                <input name="phone" type="tel" placeholder="+966 ..." className="input" />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Products of Interest</label>
-              <div className="check-list" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.6rem" }}>
-                {(Object.keys(STUDIO_PRODUCT_LABELS) as StudioProduct[]).map((prod) => (
-                  <label key={prod}>
-                    <input type="checkbox" name="products" value={prod} defaultChecked={prod === "turnkey_experience"} />
-                    {STUDIO_PRODUCT_LABELS[prod]}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
-              <div className="form-group">
-                <label>Currency</label>
-                <select name="currency" defaultValue="USD" className="select">
-                  {CURRENCIES.map((curr) => (
-                    <option key={curr} value={curr}>{curr}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Estimated Value</label>
-                <input name="estimatedValue" type="number" step="any" placeholder="100000" className="input" />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Lead owner</label>
-              <select name="assignedLeadId" defaultValue={user.id} className="select" required>
-                {people.map((person) => (
-                  <option key={String(person._id)} value={String(person._id)}>
-                    {person.name}{person.title ? ` (${person.title})` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Inquiry Notes & Scope Brief</label>
-              <textarea name="notes" rows={3} placeholder="Initial conversation notes, event vision, timeline expectations..." className="textarea" />
-            </div>
-
-            <div className="form-actions">
-              <SubmitButton>Add to Pipeline</SubmitButton>
-            </div>
-          </form>
-        </div>
-      </details>
-
-      {/* Pipeline Columns */}
       <div
         style={{
           display: "grid",
@@ -313,86 +203,6 @@ async function SalesPipeline({
           </div>
         ))}
       </div>
-
-      <div className="split" style={{ marginTop: "1.5rem" }}>
-        <section className="panel">
-          <div className="section-head">
-            <h2>Proposals and quotations</h2>
-            <Link href="/clients">Client accounts</Link>
-          </div>
-          {visibleProposals.map((proposal) => {
-            const lead = proposal.leadId as unknown as { companyName?: string } | null;
-            return (
-              <article key={String(proposal._id)} className="card" style={{ marginBottom: "0.6rem" }}>
-                <strong>{proposal.title}</strong>
-                <p className="muted">{lead?.companyName} · {proposal.status} · ${proposal.amount.toLocaleString()}</p>
-                <p className="hint">In: {proposal.scopeIncluded || "—"} · Out: {proposal.scopeExcluded || "—"}</p>
-                <p className="hint">{proposal.paymentTerms}</p>
-              </article>
-            );
-          })}
-          <form action={createProposalFormAction} className="stack">
-            <label className="field">
-              <span>Lead</span>
-              <select className="select" name="leadId" required>
-                {leads.map((lead) => <option key={lead._id.toString()} value={lead._id.toString()}>{lead.companyName}</option>)}
-              </select>
-            </label>
-            <label className="field"><span>Title</span><input className="input" name="title" required /></label>
-            <label className="field"><span>Scope included</span><textarea className="textarea" name="scopeIncluded" rows={2} /></label>
-            <label className="field"><span>Scope excluded</span><textarea className="textarea" name="scopeExcluded" rows={2} /></label>
-            <label className="field"><span>Assumptions</span><textarea className="textarea" name="assumptions" rows={2} /></label>
-            <label className="field"><span>Amount</span><input className="input" name="amount" type="number" min="0" /></label>
-            <label className="field"><span>Payment terms</span><input className="input" name="paymentTerms" /></label>
-            <label className="field">
-              <span>Status</span>
-              <select className="select" name="status">
-                {PROPOSAL_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
-            </label>
-            <SubmitButton>Save proposal</SubmitButton>
-          </form>
-        </section>
-        <section className="stack">
-          <div className="panel">
-            <h2>Follow-ups and meetings</h2>
-            {visibleFollowUps.map((item) => (
-              <div key={String(item._id)} className="row" style={{ marginBottom: "0.5rem" }}>
-                <span>{item.done ? "Done" : "Open"} · {item.title}</span>
-                {!item.done ? (
-                  <form action={completeFollowUpFormAction}>
-                    <input type="hidden" name="id" value={String(item._id)} />
-                    <SubmitButton variant="ghost">Complete</SubmitButton>
-                  </form>
-                ) : null}
-              </div>
-            ))}
-            <form action={createFollowUpFormAction} className="stack">
-              <label className="field">
-                <span>Lead</span>
-                <select className="select" name="leadId">
-                  <option value="">General</option>
-                  {leads.map((lead) => <option key={lead._id.toString()} value={lead._id.toString()}>{lead.companyName}</option>)}
-                </select>
-              </label>
-              <label className="field"><span>Next action</span><input className="input" name="title" required /></label>
-              <label className="field"><span>When</span><input className="input" type="date" name="when" required /></label>
-              <label className="field"><span>Notes</span><input className="input" name="notes" /></label>
-              <SubmitButton>Schedule</SubmitButton>
-            </form>
-          </div>
-          {user.role === "owner" ? (
-            <form action={createSalesTargetFormAction} className="card form-card stack">
-              <h2>Sales target</h2>
-              <label className="field"><span>Label</span><input className="input" name="label" placeholder="Q4 new business" /></label>
-              <label className="field"><span>Year</span><input className="input" name="year" type="number" defaultValue={new Date().getFullYear()} /></label>
-              <label className="field"><span>Quarter</span><input className="input" name="quarter" type="number" min="1" max="4" defaultValue={1} /></label>
-              <label className="field"><span>Amount</span><input className="input" name="amount" type="number" min="0" required /></label>
-              <SubmitButton>Save target</SubmitButton>
-            </form>
-          ) : null}
-        </section>
-      </div>
-    </div>
+    </>
   );
 }

@@ -8,7 +8,7 @@ import { countLeadsAssignedTo } from "@/services/commercial";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<PageFallback label="Opening makehappn" />}>
+    <Suspense fallback={<PageFallback label="Opening makehappn" variant="panel" />}>
       <Shell>{children}</Shell>
     </Suspense>
   );

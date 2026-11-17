@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { canViewFinance, canViewPerformance, type SessionUser } from "@/lib/permissions";
 import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
 import { logout } from "@/app/actions/auth";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
+
+const RAIL_STORAGE_KEY = "mh.rail.collapsed";
 
 const links = [
   { href: "/dashboard", label: "Command Center", ownerOnly: false },
@@ -40,6 +43,28 @@ function identityLabel(user: SessionUser) {
 
 export function Rail({ user, showSales }: { user: SessionUser; showSales: boolean }) {
   const pathname = usePathname();
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(RAIL_STORAGE_KEY);
+      if (stored === "1") setCollapsed(true);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    const shell = document.querySelector(".shell");
+    if (!shell) return;
+    shell.classList.toggle("rail-collapsed", collapsed);
+    try {
+      window.localStorage.setItem(RAIL_STORAGE_KEY, collapsed ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [collapsed]);
+
   const visible = links.filter((link) => {
     if (link.href === "/finance") return canViewFinance(user);
     if (link.href === "/reports") return canViewPerformance(user);
@@ -48,9 +73,21 @@ export function Rail({ user, showSales }: { user: SessionUser; showSales: boolea
   });
 
   return (
-    <aside className="rail">
+    <aside className="rail" id="app-rail">
       <div className="rail-brand">
-        <p className="brand-kicker">Studio OS · live</p>
+        <div className="rail-brand-row">
+          <p className="brand-kicker">Studio OS · live</p>
+          <button
+            type="button"
+            className="rail-collapse"
+            aria-expanded={!collapsed}
+            aria-controls="app-rail"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            onClick={() => setCollapsed((value) => !value)}
+          >
+            <span aria-hidden="true">{collapsed ? "»" : "«"}</span>
+          </button>
+        </div>
         <Wordmark href="/dashboard" className="brand" />
       </div>
 
@@ -58,15 +95,18 @@ export function Rail({ user, showSales }: { user: SessionUser; showSales: boolea
         <p className="rail-section">Navigate</p>
         {visible.map((link, index) => {
           const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
+          const indexLabel = String(index + 1).padStart(2, "0");
           return (
             <Link
               key={link.href}
               href={link.href}
               className={active ? "rail-link active" : "rail-link"}
               aria-current={active ? "page" : undefined}
+              aria-label={link.label}
+              title={link.label}
             >
-              <span className="rail-index">{String(index + 1).padStart(2, "0")}</span>
-              {link.label}
+              <span className="rail-index">{indexLabel}</span>
+              <span className="rail-label">{link.label}</span>
               <span className="rail-arrow" aria-hidden="true">→</span>
             </Link>
           );

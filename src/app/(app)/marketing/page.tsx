@@ -2,11 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { Banner, PageFallback } from "@/components/banner";
-import { SubmitButton } from "@/components/submit-button";
 import { DATA_OFFLINE, orEmpty } from "@/lib/db";
 import { formatDate, readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
-import { createMarketingFormAction } from "@/app/actions/studio-ops";
 import { listMarketing } from "@/services/studio-ops";
 import { MARKETING_KINDS, MARKETING_KIND_LABELS, type MarketingKind } from "@/models/StudioOps";
 
@@ -45,6 +43,7 @@ async function Marketing({
           <h1>Marketing</h1>
           <p className="lede">Calendar, content, campaigns, case studies, assets, PR, and the digital presence in one pipeline.</p>
         </div>
+        <Link href="/marketing/new" className="btn btn-primary">+ Add marketing item</Link>
       </header>
       <div className="card" style={{ marginBottom: "1.5rem", padding: "0.75rem 1rem" }}>
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -56,24 +55,6 @@ async function Marketing({
           ))}
         </div>
       </div>
-      <details className="disclosure" style={{ marginBottom: "1.5rem" }}>
-        <summary className="btn btn-primary">+ Add marketing item</summary>
-        <form action={createMarketingFormAction} className="card form-card stack" style={{ marginTop: "1rem" }}>
-          <label className="field">
-            <span>Type</span>
-            <select className="select" name="kind">
-              {MARKETING_KINDS.map((item) => <option key={item} value={item}>{MARKETING_KIND_LABELS[item]}</option>)}
-            </select>
-          </label>
-          <label className="field"><span>Title</span><input className="input" name="title" required /></label>
-          <label className="field"><span>Channel</span><input className="input" name="channel" placeholder="Instagram, press, site" /></label>
-          <label className="field"><span>Status</span><input className="input" name="status" placeholder="planned, in progress, published" /></label>
-          <label className="field"><span>Date</span><input className="input" type="date" name="startsOn" /></label>
-          <label className="field"><span>Performance note</span><input className="input" name="metric" placeholder="Reach, leads, press hits" /></label>
-          <label className="field"><span>Notes</span><textarea className="textarea" name="notes" rows={3} /></label>
-          <SubmitButton>Save</SubmitButton>
-        </form>
-      </details>
       {items.length === 0 ? <p className="muted">Nothing on the calendar yet.</p> : (
         <div className="card-grid">
           {items.map((item) => (

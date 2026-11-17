@@ -131,7 +131,7 @@ export async function createPOFormAction(formData: FormData): Promise<void> {
   const collectiveMemberId = field(formData, "collectiveMemberId");
   const scopeDescription = field(formData, "scopeDescription");
   const amount = parseFloat(field(formData, "amount")) || 0;
-  const path = `/projects/${projectId}/commercials`;
+  const path = `/projects/${projectId}/commercials/pos`;
 
   try {
     await getCurrentUser();
@@ -155,7 +155,7 @@ export async function recordBillFormAction(formData: FormData): Promise<void> {
   const billNumber = field(formData, "billNumber");
   const amount = parseFloat(field(formData, "amount")) || 0;
   const notes = field(formData, "notes");
-  const path = `/projects/${projectId}/commercials`;
+  const path = `/projects/${projectId}/commercials/bills`;
 
   try {
     await getCurrentUser();
@@ -181,7 +181,7 @@ export async function createInvoiceFormAction(formData: FormData): Promise<void>
   const amount = parseFloat(field(formData, "amount")) || 0;
   const percentage = parseFloat(field(formData, "percentage")) || undefined;
   const dueDate = parseDateInput(field(formData, "dueDate"));
-  const path = `/projects/${projectId}/commercials`;
+  const path = `/projects/${projectId}/commercials/invoices`;
 
   try {
     await getCurrentUser();
@@ -204,7 +204,7 @@ export async function createInvoiceFormAction(formData: FormData): Promise<void>
 export async function markInvoicePaidFormAction(formData: FormData): Promise<void> {
   const projectId = field(formData, "projectId");
   const invoiceId = field(formData, "invoiceId");
-  const path = `/projects/${projectId}/commercials`;
+  const path = `/projects/${projectId}/commercials/invoices`;
 
   try {
     await getCurrentUser();

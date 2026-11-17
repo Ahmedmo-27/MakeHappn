@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { ModuleTabs } from "@/components/module-tabs";
 
 export function ProjectTabs({
   projectId,
@@ -10,37 +9,20 @@ export function ProjectTabs({
   projectId: string;
   canViewCommercials: boolean;
 }) {
-  const pathname = usePathname();
   const tabs = [
     { href: `/projects/${projectId}`, label: "Overview", exact: true },
-    { href: `/projects/${projectId}/scope`, label: "Scope & Brief", exact: false },
-    { href: `/projects/${projectId}/board`, label: "Board", exact: false },
-    { href: `/projects/${projectId}/deliverables`, label: "Deliverables", exact: false },
-    { href: `/projects/${projectId}/changes`, label: "Changes", exact: false },
-    { href: `/projects/${projectId}/risks`, label: "Risks & Issues", exact: false },
+    { href: `/projects/${projectId}/scope`, label: "Scope & Brief" },
+    { href: `/projects/${projectId}/board`, label: "Board" },
+    { href: `/projects/${projectId}/production`, label: "Production" },
+    { href: `/projects/${projectId}/deliverables`, label: "Deliverables" },
+    { href: `/projects/${projectId}/changes`, label: "Changes" },
+    { href: `/projects/${projectId}/risks`, label: "Risks & Issues" },
+    { href: `/projects/${projectId}/closeout`, label: "Closeout" },
   ];
 
   if (canViewCommercials) {
-    tabs.push({ href: `/projects/${projectId}/commercials`, label: "Commercials & Costs", exact: false });
+    tabs.push({ href: `/projects/${projectId}/commercials`, label: "Commercials & Costs" });
   }
 
-  return (
-    <nav className="tabs" style={{ marginBottom: "1.5rem" }}>
-      {tabs.map((tab) => {
-        const active = tab.exact
-          ? pathname === tab.href
-          : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={active ? "tab active" : "tab"}
-            aria-current={active ? "page" : undefined}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+  return <ModuleTabs tabs={tabs} ariaLabel="Project sections" style={{ marginBottom: "1.5rem" }} />;
 }

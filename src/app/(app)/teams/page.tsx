@@ -43,6 +43,9 @@ async function Teams({
             A multidisciplinary team built around three connected functions — Vision & Design, Project & Delivery, and Communication.
             &ldquo;Everyone has a lane · Projects move across lanes · Ownership is clear at every handover.&rdquo;
           </p>
+          <p className="hint">
+            Roster edits live in <Link href="/people">People</Link>. Lane load snapshot: <Link href="/dashboard/team">Command Center → Team</Link>.
+          </p>
         </div>
         <Sticker name="checkerboard" className="header-grid" />
       </header>
