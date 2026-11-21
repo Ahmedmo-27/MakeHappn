@@ -26,6 +26,7 @@ import {
 import { Activity } from "@/models/Activity";
 import { Comment } from "@/models/Comment";
 import { Event } from "@/models/Event";
+import { Project } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { Team } from "@/models/Team";
 import { User } from "@/models/User";
@@ -518,20 +519,37 @@ function describeActivity(
 
 export async function listProjectBoardTasks(projectId: string) {
   await connectDB();
-  const [tasks, users, teams] = await Promise.all([
-    Task.find({ projectId: toObjectId(projectId) })
+  const projectObjectId = toObjectId(projectId);
+  const [tasks, users, project] = await Promise.all([
+    Task.find({ projectId: projectObjectId })
       .populate("accountableOwnerId", "name title")
       .populate("collaboratorIds", "name title")
       .populate("teamId", "name")
       .sort({ createdAt: -1 })
       .lean(),
-    User.find().select("name email title role functionalRoles").sort({ name: 1 }).lean(),
-    Team.find().select("name").sort({ name: 1 }).lean(),
+    User.find({ isActive: { $ne: false }, isVacant: { $ne: true } })
+      .select("name email title role functionalRoles teamId laneIds availability availabilityNote availabilityUpdatedAt")
+      .sort({ name: 1 })
+      .lean(),
+    Project.findById(projectObjectId).select("projectLeadId teamUserIds").lean(),
   ]);
+  if (!project) throw new Error("Project not found");
+  const projectMemberIds = new Set([String(project.projectLeadId), ...project.teamUserIds.map(String)]);
+  const person = (u: (typeof users)[number]) => ({
+    id: String(u._id),
+    name: u.name,
+    title: u.title ?? "",
+    availability: u.availability ?? "available",
+    availabilityNote: u.availabilityNote ?? "",
+    availabilityUpdatedAt: u.availabilityUpdatedAt?.toISOString() ?? null,
+  });
+  const projectMembers = users.filter((user) => projectMemberIds.has(String(user._id))).map(person);
+  const projectLead = projectMembers.find((member) => member.id === String(project.projectLeadId)) ?? null;
 
   return {
     tasks: tasks.map((t) => ({
       id: String(t._id),
+      teamId: "project",
       title: t.title,
       description: t.description,
       status: t.status,
@@ -540,27 +558,17 @@ export async function listProjectBoardTasks(projectId: string) {
       taskCategory: t.taskCategory ?? "deliverable_prerequisite",
       isGatePrerequisite: t.isGatePrerequisite ?? true,
       dueDate: t.dueDate ? t.dueDate.toISOString() : null,
-      laneName: (t.teamId as unknown as { name?: string })?.name ?? "General",
+      laneName: "Project team",
       owner: t.accountableOwnerId as unknown as { _id?: unknown; name?: string; title?: string } | null,
       collaborators: (t.collaboratorIds as unknown as Array<{ _id?: unknown; name?: string }>) ?? [],
     })),
-    roster: users.map((u) => ({
-      id: String(u._id),
-      name: u.name,
-      title: u.title ?? "",
-      role: u.role,
-    })),
-    lanes: teams.map((team) => ({
-      id: String(team._id),
-      name: team.name,
-    })),
+    projectTeams: [{ id: "project", name: "Project team", leader: projectLead, members: projectMembers }],
   };
 }
 
 export async function createProjectTask(input: {
   projectId: string;
   stage?: string | null;
-  laneId: string;
   accountableOwnerId: string;
   collaboratorIds?: string[];
   title: string;
@@ -576,14 +584,22 @@ export async function createProjectTask(input: {
   }
   if (!input.dueDate) throw new Error("A due date is required");
 
+  const eligibleMemberIds = await getProjectMemberIds(input.projectId);
   const ownerId = toObjectId(input.accountableOwnerId);
+  if (!eligibleMemberIds.has(String(ownerId))) {
+    throw new Error("Choose an accountable owner selected for this project");
+  }
+  const collaboratorIds = (input.collaboratorIds ?? []).map(toObjectId);
+  if (collaboratorIds.some((id) => !eligibleMemberIds.has(String(id)))) {
+    throw new Error("Choose collaborators selected for this project");
+  }
   const task = await Task.create({
     projectId: toObjectId(input.projectId),
     stage: (input.stage as ProjectStage) ?? undefined,
-    teamId: toObjectId(input.laneId),
+    teamId: null,
     accountableOwnerId: ownerId,
     assigneeId: ownerId,
-    collaboratorIds: (input.collaboratorIds ?? []).map(toObjectId),
+    collaboratorIds,
     title: input.title.trim(),
     description: input.description?.trim() ?? "",
     dueDate: input.dueDate ?? null,
@@ -595,6 +611,20 @@ export async function createProjectTask(input: {
   });
 
   return task;
+}
+
+async function getProjectMemberIds(projectId: string) {
+  const project = await Project.findById(toObjectId(projectId))
+    .select("projectLeadId teamUserIds")
+    .lean();
+  if (!project) throw new Error("Project not found");
+  const memberIds = [...new Set([String(project.projectLeadId), ...project.teamUserIds.map(String)])];
+  const activeMembers = await User.find({
+    _id: { $in: memberIds.map(toObjectId) },
+    isActive: { $ne: false },
+    isVacant: { $ne: true },
+  }).select("_id").lean();
+  return new Set(activeMembers.map((member) => String(member._id)));
 }
 
 export async function moveProjectTaskStatus(
@@ -638,6 +668,20 @@ export async function updateProjectTask(input: {
   await connectDB();
   const task = await Task.findById(input.taskId);
   if (!task) throw new Error("Task not found");
+  if (task.projectId && (input.accountableOwnerId || input.collaboratorIds)) {
+    const eligibleMemberIds = await getProjectMemberIds(String(task.projectId));
+    const nextOwnerId = input.accountableOwnerId
+      ? String(toObjectId(input.accountableOwnerId))
+      : String(task.accountableOwnerId);
+    if (!eligibleMemberIds.has(nextOwnerId)) {
+      throw new Error("Choose an accountable owner selected for this project");
+    }
+    const nextCollaboratorIds = input.collaboratorIds?.map((id) => String(toObjectId(id))) ??
+      task.collaboratorIds.map(String);
+    if (nextCollaboratorIds.some((id) => !eligibleMemberIds.has(id))) {
+      throw new Error("Choose collaborators selected for this project");
+    }
+  }
   if (input.title) task.title = input.title.trim();
   if (input.description != null) task.description = input.description;
   if (input.dueDate !== undefined) task.dueDate = input.dueDate;

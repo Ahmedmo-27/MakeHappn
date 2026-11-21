@@ -1,4 +1,4 @@
-import type { ProjectStage, ProjectStatus, StudioProduct } from "@/lib/domain";
+import type { AvailabilityStatus, ProjectStage, ProjectStatus, StudioProduct } from "@/lib/domain";
 import { api } from "@/lib/api-client";
 
 export type UpdateProjectInput = Record<string, unknown>;
@@ -29,6 +29,68 @@ export function getProjectById(id: string) {
 
 export function createProject(input: unknown) {
   return api<any>("/projects", { body: input });
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  title: string;
+  profileImage: string;
+  availability: AvailabilityStatus;
+  availabilityNote: string;
+  availabilityUpdatedAt: string | null;
+  isLead: boolean;
+}
+
+export function getProjectTeam(projectId: string) {
+  return api<{ members: TeamMember[]; candidates: TeamMember[] }>(`/projects/${projectId}/team`);
+}
+
+export function updateProjectSetup(projectId: string, input: Record<string, unknown>) {
+  return api<any>(`/projects/${projectId}/setup`, { method: "PATCH", body: input });
+}
+
+export function updateProjectTimeline(projectId: string, input: Record<string, unknown>) {
+  return api<unknown>(`/projects/${projectId}/setup/timeline`, { method: "PATCH", body: input });
+}
+
+export function updateProjectSetupDeliverables(projectId: string, phases: Array<{ name: string; deliverables: string }>) {
+  return api<unknown>(`/projects/${projectId}/setup/deliverables`, { method: "PATCH", body: { phases } });
+}
+
+export function updateProjectKickoff(projectId: string, kickoffAt: string) {
+  return api<unknown>(`/projects/${projectId}/setup/kickoff`, { method: "PATCH", body: { kickoffAt } });
+}
+
+export function getProjectCommunicationDetails(projectId: string) {
+  return api<{
+    name: string;
+    code: string;
+    brief: string;
+    members: Array<{ name: string; email: string }>;
+  }>(`/projects/${projectId}/communications`);
+}
+
+export function notifyProjectTeam(projectId: string) {
+  return api<{ sentCount: number }>(`/projects/${projectId}/notify-team`);
+}
+
+export function addProjectMember(projectId: string, userId: string) {
+  return api<{ ok: true }>(`/projects/${projectId}/members`, { body: { userId } });
+}
+
+export function removeProjectMember(projectId: string, userId: string) {
+  return api<{ ok: true }>(`/projects/${projectId}/members/remove`, { body: { userId } });
+}
+
+export function getOwnAvailability() {
+  return api<{ availability: AvailabilityStatus; availabilityNote: string }>("/me/availability");
+}
+
+export function setOwnAvailability(status: string, note: string) {
+  return api<{ availability: AvailabilityStatus; availabilityNote: string }>("/me/availability", {
+    body: { status, note },
+  });
 }
 
 export function updateProject(projectId: string, input: unknown) {

@@ -2,6 +2,7 @@ import mongoose, { type Model, Schema, type Types } from "mongoose";
 import {
   PROJECT_STAGES,
   PROJECT_STATUSES,
+  PROJECT_SETUP_PHASES,
   STUDIO_PRODUCTS,
   NON_BYPASSABLE_STAGES,
   CURRENCIES,
@@ -9,6 +10,7 @@ import {
   type ProjectStatus,
   type StudioProduct,
   type StudioCurrency,
+  type ProjectSetupPhaseName,
 } from "@/lib/domain";
 
 export interface IProjectMilestone {
@@ -51,6 +53,8 @@ export interface IProject {
   projectType: string;
   keyRequirements: string;
   scopeIncluded: string;
+  /** Selected scope items, carried over from the inquiry. */
+  scopeItems: string[];
   scopeExcluded: string;
   mainContactName: string;
   leadSource: string;
@@ -72,6 +76,13 @@ export interface IProject {
   qualityChecklist: Array<{ label: string; done: boolean }>;
   startDate?: Date | null;
   deliveryDate?: Date | null;
+  setupPhases: Array<{
+    name: ProjectSetupPhaseName;
+    durationDays: number;
+    ownerId?: Types.ObjectId | null;
+    deliverables: string;
+  }>;
+  kickoffAt?: Date | null;
   closeDate?: Date | null;
   isDelivered: boolean;
 
@@ -89,6 +100,10 @@ export interface IProject {
   // Milestone Gates & Matrix Staffing
   milestones: IProjectMilestone[];
   teamUserIds: Types.ObjectId[];
+  /** Legacy team assignments retained for existing project records. */
+  teamIds: Types.ObjectId[];
+  /** Legacy per-team member mapping retained for existing project records. */
+  teamAssignments: Array<{ teamId: Types.ObjectId; memberIds: Types.ObjectId[] }>;
 
   // Stage 11 Closeout Audit
   closeoutChecklist?: ICloseoutChecklist;
@@ -159,6 +174,7 @@ const projectSchema = new Schema<IProject>(
     projectType: { type: String, default: "", trim: true },
     keyRequirements: { type: String, default: "", trim: true },
     scopeIncluded: { type: String, default: "", trim: true },
+    scopeItems: [{ type: String, trim: true }],
     scopeExcluded: { type: String, default: "", trim: true },
     mainContactName: { type: String, default: "", trim: true },
     leadSource: { type: String, default: "", trim: true },
@@ -191,6 +207,15 @@ const projectSchema = new Schema<IProject>(
     ],
     startDate: { type: Date, default: null },
     deliveryDate: { type: Date, default: null },
+    setupPhases: [
+      {
+        name: { type: String, enum: PROJECT_SETUP_PHASES, required: true },
+        durationDays: { type: Number, min: 0, default: 0 },
+        ownerId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+        deliverables: { type: String, default: "", trim: true },
+      },
+    ],
+    kickoffAt: { type: Date, default: null },
     closeDate: { type: Date, default: null },
     isDelivered: { type: Boolean, default: false, index: true },
 
@@ -205,6 +230,13 @@ const projectSchema = new Schema<IProject>(
 
     milestones: [milestoneSchema],
     teamUserIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    teamIds: [{ type: Schema.Types.ObjectId, ref: "Team" }],
+    teamAssignments: [
+      {
+        teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true },
+        memberIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
+      },
+    ],
     closeoutChecklist: { type: closeoutChecklistSchema, default: () => ({}) },
   },
   { timestamps: true },

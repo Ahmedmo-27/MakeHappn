@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { Banner, PageFallback } from "@/components/banner";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 import { PersonForm } from "@/components/person-form";
 import { FUNCTIONAL_ROLE_LABELS, roleLabel } from "@/lib/domain";
 import { DATA_OFFLINE, orEmpty } from "@/lib/db";
@@ -43,9 +44,12 @@ async function PeopleDirectory({
       <section className="stack">
         {data.people.map((person) => (
           <article key={person.id} className="card stack" style={{ gap: "0.6rem" }}>
-            <div className="row">
-              <h2 style={{ margin: 0 }}>{person.name}</h2>
-              <span className={`badge badge-${person.role}`}>{roleLabel(person.role)}</span>
+            <div className="row" style={{ gap: "0.75rem" }}>
+              <EmployeeAvatar name={person.name} profileImage={person.profileImage} size={40} />
+              <div>
+                <h2 style={{ margin: 0 }}>{person.name}</h2>
+                <span className={`badge badge-${person.role}`}>{roleLabel(person.role)}</span>
+              </div>
             </div>
             <p className="muted" style={{ margin: 0 }}>
               {person.title ? <strong>{person.title} · </strong> : null}

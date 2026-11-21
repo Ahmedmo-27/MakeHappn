@@ -12,10 +12,11 @@ import { Wordmark } from "@/components/wordmark";
 const RAIL_STORAGE_KEY = "mh.rail.collapsed";
 
 const links = [
-  { href: "/dashboard", label: "Command Center", ownerOnly: false },
+  { href: "/dashboard", label: "Founder Dashboard", ownerOnly: false },
+  { href: "/profile", label: "My Profile", ownerOnly: false },
   { href: "/projects", label: "Projects", ownerOnly: false },
   { href: "/tasks", label: "Tasks", ownerOnly: false },
-  { href: "/sales", label: "Sales & Pipeline", ownerOnly: false },
+  { href: "/sales/inquiries", label: "New Opportunity", ownerOnly: false },
   { href: "/clients", label: "Clients", ownerOnly: false },
   { href: "/finance", label: "Finance", ownerOnly: false },
   { href: "/marketing", label: "Marketing", ownerOnly: false },
@@ -41,7 +42,7 @@ function identityLabel(user: SessionUser) {
   return roleLabel(user.role);
 }
 
-export function Rail({ user, showSales }: { user: SessionUser; showSales: boolean }) {
+export function Rail({ user }: { user: SessionUser }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
@@ -68,7 +69,6 @@ export function Rail({ user, showSales }: { user: SessionUser; showSales: boolea
   const visible = links.filter((link) => {
     if (link.href === "/finance") return canViewFinance(user);
     if (link.href === "/reports") return canViewPerformance(user);
-    if (link.href === "/sales") return showSales;
     return !link.ownerOnly || user.role === "owner";
   });
 

@@ -9,12 +9,12 @@ export function SubmitButton({
   style,
 }: {
   children: React.ReactNode;
-  variant?: "primary" | "ghost";
+  variant?: "primary" | "ghost" | "danger" | "success";
   className?: string;
   style?: React.CSSProperties;
 }) {
   const { pending } = useFormStatus();
-  const defaultClass = variant === "primary" ? "btn btn-primary" : "btn btn-ghost";
+  const defaultClass = `btn btn-${variant}`;
   return (
     <button className={className ?? defaultClass} style={style} disabled={pending}>
       {pending ? "Saving…" : children}

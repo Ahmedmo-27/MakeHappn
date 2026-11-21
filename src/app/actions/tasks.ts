@@ -30,7 +30,6 @@ export async function createProjectTaskAction(formData: FormData) {
     await createProjectTask({
       projectId,
       stage: field(formData, "stage") || null,
-      laneId: field(formData, "laneId"),
       accountableOwnerId: ownerId,
       collaboratorIds,
       title: assertName(field(formData, "title"), "Title", 160),

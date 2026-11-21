@@ -331,3 +331,156 @@ export function normalizeStudioLane(value: string): StudioLane | null {
 export function isFunctionalRole(value: string): value is FunctionalRole {
   return (FUNCTIONAL_ROLES as readonly string[]).includes(value);
 }
+
+
+export const INQUIRY_PRODUCTS = [
+  "turnkey_experience",
+  "brand_identity",
+  "production",
+  "pop_shop",
+  "retail_space",
+] as const;
+export type InquiryProduct = (typeof INQUIRY_PRODUCTS)[number];
+
+export const INQUIRY_PRODUCT_LABELS: Record<InquiryProduct, string> = {
+  turnkey_experience: "Turnkey Experience",
+  brand_identity: "Brand Identity",
+  production: "Production",
+  pop_shop: "Pop Shop",
+  retail_space: "Retail Space",
+};
+
+/** Studio products a converted inquiry starts its project with. */
+export const INQUIRY_PRODUCT_TO_STUDIO: Record<InquiryProduct, StudioProduct> = {
+  turnkey_experience: "turnkey_experience",
+  brand_identity: "brand_design",
+  production: "production",
+  pop_shop: "turnkey_experience",
+  retail_space: "turnkey_experience",
+};
+
+/** Placeholder scope options until the studio confirms the final list. */
+export const INQUIRY_SCOPES = [
+  "Concept & Creative Direction",
+  "Design Development",
+  "Fabrication & Production",
+  "Installation & Operations",
+  "Brand Communication",
+] as const;
+
+export const INQUIRY_SOURCES = ["social_media", "referral", "existing_client", "website"] as const;
+export type InquirySource = (typeof INQUIRY_SOURCES)[number];
+
+export const INQUIRY_SOURCE_LABELS: Record<InquirySource, string> = {
+  social_media: "Social media",
+  referral: "Referral",
+  existing_client: "Existing client",
+  website: "Website",
+};
+
+export function isInquirySource(value: string): value is InquirySource {
+  return (INQUIRY_SOURCES as readonly string[]).includes(value);
+}
+
+export const INQUIRY_STATUSES = ["pending", "approved", "declined", "converted"] as const;
+export type InquiryStatus = (typeof INQUIRY_STATUSES)[number];
+
+export const INQUIRY_STATUS_LABELS: Record<InquiryStatus, string> = {
+  pending: "Pending review",
+  approved: "Approved",
+  declined: "Declined",
+  converted: "Converted to project",
+};
+
+export function isInquiryProduct(value: string): value is InquiryProduct {
+  return (INQUIRY_PRODUCTS as readonly string[]).includes(value);
+}
+
+/** Working days run Sunday to Thursday; Friday and Saturday are the weekend. */
+export function isWorkingDay(date: Date): boolean {
+  const day = date.getUTCDay();
+  return day !== 5 && day !== 6;
+}
+
+export function addWorkingDays(from: Date, days: number): Date {
+  const result = new Date(from);
+  let remaining = days;
+  while (remaining > 0) {
+    result.setUTCDate(result.getUTCDate() + 1);
+    if (isWorkingDay(result)) remaining -= 1;
+  }
+  return result;
+}
+
+/** An inquiry must be approved or declined within one working day of submission. */
+export function inquiryDecisionDue(submittedAt: Date | string): Date {
+  return addWorkingDays(new Date(submittedAt), 1);
+}
+
+export function inquiryNeedsAttention(
+  inquiry: { status: string; createdAt: Date | string },
+  now: Date = new Date(),
+): boolean {
+  return inquiry.status === "pending" && now.getTime() > inquiryDecisionDue(inquiry.createdAt).getTime();
+}
+
+export const INQUIRY_ATTENTION_LABEL = "Needs your attention";
+
+export function inquiryStatusLabel(
+  inquiry: { status: InquiryStatus; createdAt: Date | string },
+  now: Date = new Date(),
+): string {
+  return inquiryNeedsAttention(inquiry, now) ? INQUIRY_ATTENTION_LABEL : INQUIRY_STATUS_LABELS[inquiry.status];
+}
+
+export type InquiryChannel = "email" | "whatsapp";
+
+/** Email when the client contact holds an address, WhatsApp otherwise. */
+export function inquiryChannel(contact: string): InquiryChannel {
+  return contact.includes("@") ? "email" : "whatsapp";
+}
+
+/** Placeholder decline response until the studio shares its template. */
+export function buildDeclineResponse(input: {
+  channel: InquiryChannel;
+  clientName: string;
+  brandName: string;
+  projectName: string;
+  reason: string;
+}): { subject: string; body: string } {
+  const subject = `Your inquiry: ${input.projectName}`;
+  const lines = [
+    `Hello ${input.clientName},`,
+    "",
+    `Thank you for reaching out to MakeHappn about ${input.projectName} for ${input.brandName}.`,
+    "After reviewing the brief, we are unable to take this project forward at the moment.",
+  ];
+  if (input.reason) lines.push("", input.reason);
+  lines.push("", "We appreciate your interest and would be glad to stay in touch.", "", "Best regards,", "MakeHappn");
+  return { subject, body: lines.join("\n") };
+}
+
+export const AVAILABILITY_STATUSES = ["available", "busy", "in_meeting", "out_of_office", "on_leave"] as const;
+export type AvailabilityStatus = (typeof AVAILABILITY_STATUSES)[number];
+
+export const PROJECT_SETUP_PHASES = [
+  "Discovery and alignment",
+  "Creative and curation",
+  "Branding – Artwork development",
+  "Spatial design & 3D",
+  "Production & Delivery",
+  "Installation & Operation",
+] as const;
+export type ProjectSetupPhaseName = (typeof PROJECT_SETUP_PHASES)[number];
+
+export const AVAILABILITY_LABELS: Record<AvailabilityStatus, string> = {
+  available: "Available",
+  busy: "Busy",
+  in_meeting: "In a meeting",
+  out_of_office: "Out of office",
+  on_leave: "On leave",
+};
+
+export function isAvailabilityStatus(value: string): value is AvailabilityStatus {
+  return (AVAILABILITY_STATUSES as readonly string[]).includes(value);
+}

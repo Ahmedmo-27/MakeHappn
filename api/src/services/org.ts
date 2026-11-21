@@ -29,7 +29,7 @@ async function assertUniqueEventType(name: string, ignoreId?: string) {
 export async function listPeople() {
   await connectDB();
   const [users, teams] = await Promise.all([
-    User.find().sort({ name: 1 }),
+    User.find().select("+profileImage").sort({ name: 1 }),
     Team.find().sort({ name: 1 }),
   ]);
   const teamName = new Map(teams.map((team) => [String(team._id), team.name]));
@@ -45,6 +45,7 @@ export async function listPeople() {
       email: user.email,
       role: user.role,
       title: user.title ?? "",
+      profileImage: user.profileImage ?? "",
       functionalRoles: (user.functionalRoles ?? []).filter(isFunctionalRole),
       jobDescription: user.jobDescription ?? "",
       weeklyCapacityHours: user.weeklyCapacityHours ?? 40,
@@ -183,7 +184,7 @@ export async function listTeamsWithPeople() {
   await connectDB();
   const [teams, users] = await Promise.all([
     Team.find().sort({ name: 1 }),
-    User.find({ role: { $in: ["leader", "member"] } }).sort({ name: 1 }),
+    User.find({ role: { $in: ["leader", "member"] } }).select("+profileImage").sort({ name: 1 }),
   ]);
   return teams.map((team) => ({
     id: String(team._id),
@@ -196,6 +197,7 @@ export async function listTeamsWithPeople() {
         name: user.name,
         email: user.email,
         role: user.role,
+        profileImage: user.profileImage ?? "",
       })),
   }));
 }

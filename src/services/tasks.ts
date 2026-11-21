@@ -1,7 +1,27 @@
 import { api } from "@/lib/api-client";
+import type { AvailabilityStatus } from "@/lib/domain";
+
+export interface ProjectTeam {
+  id: string;
+  name: string;
+  leader: TeamPerson | null;
+  members: TeamPerson[];
+}
+
+export interface TeamPerson {
+  id: string;
+  name: string;
+  title: string;
+  availability: AvailabilityStatus;
+  availabilityNote: string;
+  availabilityUpdatedAt: string | null;
+}
 
 export function listProjectBoardTasks(projectId: string) {
-  return api<{ tasks: Array<{ collaborators: any[]; [key: string]: any }>; roster: Array<{ id: string; name: string; [key: string]: any }>; lanes: any[] }>(`/projects/${projectId}/tasks`);
+  return api<{
+    tasks: Array<{ teamId: string; collaborators: any[]; [key: string]: any }>;
+    projectTeams: ProjectTeam[];
+  }>(`/projects/${projectId}/tasks`);
 }
 
 export function createProjectTask(input: { projectId: string } & Record<string, unknown>) {

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { createTeamAction, promoteLeaderAction, renameTeamAction } from "@/app/actions/org";
 import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 import { SubmitButton } from "@/components/submit-button";
 import { roleLabel } from "@/lib/domain";
 import { DATA_OFFLINE, orEmpty } from "@/lib/db";
@@ -76,7 +77,12 @@ async function Teams({
                   <tbody>
                     {team.people.map((person) => (
                       <tr key={person.id}>
-                        <td>{person.name}<div className="muted">{person.email}</div></td>
+                        <td>
+                          <div className="row" style={{ gap: "0.6rem" }}>
+                            <EmployeeAvatar name={person.name} profileImage={person.profileImage} size={32} small />
+                            <span>{person.name}<div className="muted">{person.email}</div></span>
+                          </div>
+                        </td>
                         <td><span className={`badge badge-${person.role}`}>{roleLabel(person.role)}</span></td>
                         <td>
                           {person.role === "leader" ? <span className="muted">Leader</span> : (

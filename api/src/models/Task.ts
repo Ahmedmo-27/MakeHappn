@@ -20,7 +20,7 @@ export interface ITask {
   _id: Types.ObjectId;
   projectId?: Types.ObjectId;
   eventId?: Types.ObjectId;
-  teamId: Types.ObjectId;
+  teamId?: Types.ObjectId | null;
   stage?: ProjectStage;
 
   // Dual Accountability
@@ -52,7 +52,7 @@ const taskSchema = new Schema<ITask>(
   {
     projectId: { type: Schema.Types.ObjectId, ref: "Project", index: true },
     eventId: { type: Schema.Types.ObjectId, ref: "Event", index: true },
-    teamId: { type: Schema.Types.ObjectId, ref: "Team", required: true, index: true },
+    teamId: { type: Schema.Types.ObjectId, ref: "Team", default: null, index: true },
     stage: { type: String, enum: PROJECT_STAGES, index: true },
 
     accountableOwnerId: { type: Schema.Types.ObjectId, ref: "User", default: null, index: true },

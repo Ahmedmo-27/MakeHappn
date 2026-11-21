@@ -6,10 +6,13 @@ import { Sticker } from "@/components/brand/sticker";
 import { Banner, PageFallback } from "@/components/banner";
 import { HealthBadge, StageTrack, loadDashboardBundle, money, pct } from "@/components/dashboard/shared";
 import { SubmitButton } from "@/components/submit-button";
+import { InquiryCard } from "@/components/inquiry-card";
+import { orEmpty } from "@/lib/db";
 import { formatDate, readMessage } from "@/lib/format";
 import { getCurrentUser } from "@/lib/session";
+import { listInquiries } from "@/services/inquiries";
 import { createDecisionFormAction, createGoalFormAction, decideFormAction } from "@/app/actions/studio-ops";
-import { STAGE_LABELS } from "@/lib/domain";
+import { STAGE_LABELS, inquiryNeedsAttention } from "@/lib/domain";
 
 const LEGACY_VIEWS: Record<string, string> = {
   business: "/dashboard/business",
@@ -44,6 +47,15 @@ async function DashboardOverview({
   const flash = readMessage(params);
   const isExec = user.role === "owner" || !!user.isExecutive;
   const data = await loadDashboardBundle(user);
+  const inquiries = await orEmpty(() => listInquiries(), []);
+  const checkedAt = new Date();
+  const pendingInquiries = inquiries
+    .filter((inquiry) => inquiry.status === "pending")
+    .sort(
+      (a, b) =>
+        Number(inquiryNeedsAttention(b, checkedAt)) - Number(inquiryNeedsAttention(a, checkedAt)) ||
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   const {
     now,
     goals,
@@ -102,6 +114,22 @@ async function DashboardOverview({
             </div>
           )}
         </div>
+
+        {pendingInquiries.length > 0 ? (
+          <section>
+            <div className="section-head">
+              <div>
+                <span className="section-index">New inquiries</span>
+              </div>
+              <Link href="/sales/inquiries" className="btn btn-ghost">All inquiries <span className="arrow">→</span></Link>
+            </div>
+            <div className="card-grid">
+              {pendingInquiries.map((inquiry) => (
+                <InquiryCard key={inquiry._id} inquiry={inquiry} />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         {isExec ? (
           <div className="split">

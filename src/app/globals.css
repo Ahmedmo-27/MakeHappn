@@ -858,6 +858,10 @@ form.card,
   color: var(--ink);
 }
 .btn-ghost:hover, .button.secondary:hover, button.secondary:hover { border-color: var(--ink); background: var(--fill-hover); color: var(--ink); }
+.btn-danger { background: #d4331f; color: #fff; }
+.btn-danger:hover { background: #b82a18; color: #fff; box-shadow: 0 0 0 4px rgba(212, 51, 31, 0.25); }
+.btn-success { background: #1a8f52; color: #fff; }
+.btn-success:hover { background: #157845; color: #fff; box-shadow: 0 0 0 4px rgba(26, 143, 82, 0.25); }
 .btn .arrow { transition: transform 0.3s var(--ease); }
 .btn:hover .arrow { transform: translateX(4px); }
 

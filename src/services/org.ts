@@ -9,6 +9,7 @@ export function listPeople() {
       email: string;
       role: Role;
       title: string;
+      profileImage?: string;
       functionalRoles: FunctionalRole[];
       jobDescription: string;
       weeklyCapacityHours: number;

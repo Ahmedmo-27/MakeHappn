@@ -11,6 +11,7 @@ export function ProjectTabs({
 }) {
   const tabs = [
     { href: `/projects/${projectId}`, label: "Overview", exact: true },
+    { href: `/projects/${projectId}/setup`, label: "Setup" },
     { href: `/projects/${projectId}/scope`, label: "Scope & Brief" },
     { href: `/projects/${projectId}/board`, label: "Board" },
     { href: `/projects/${projectId}/production`, label: "Production" },

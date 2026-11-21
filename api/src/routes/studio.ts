@@ -16,9 +16,12 @@ import * as analytics from "@/services/analytics";
 import * as collective from "@/services/collective";
 import * as commercial from "@/services/commercial";
 import * as deliverables from "@/services/deliverables";
+import * as inquiries from "@/services/inquiries";
 import * as org from "@/services/org";
+import * as profile from "@/services/profile";
 import * as production from "@/services/production";
 import * as projects from "@/services/projects";
+import * as projectCommunications from "@/services/project-communications";
 import * as risks from "@/services/risks";
 import * as studio from "@/services/studio-ops";
 import * as tasks from "@/services/tasks";
@@ -84,6 +87,57 @@ studioRouter.post("/leads/:id/stage", validate(z.object({ stage: z.string() })),
 studioRouter.post("/leads/:id/owner", validate(z.object({ assignedLeadId: z.string() })), send(async (req) => commercial.updateLeadOwner(req.params.id, req.body.assignedLeadId)));
 studioRouter.post("/leads/:id/convert", send(async (req) => commercial.convertLeadToConfirmedProject(req.params.id, actor(req).id)));
 
+function requireSalesDecider(user: SessionUser) {
+  if (!canSeeAllSales(user)) throw new HttpError(403, "Only studio leadership can review inquiries");
+}
+
+studioRouter.get("/inquiries", send(async (req) => {
+  const user = actor(req);
+  return inquiries.listInquiries({ userId: canSeeAllSales(user) ? undefined : user.id });
+}));
+studioRouter.post("/inquiries", validate(loose), send(async (req) => {
+  const user = actor(req);
+  return inquiries.createInquiry(req.body, { id: user.id, name: user.name, email: user.email });
+}));
+studioRouter.get("/inquiries/:id", send(async (req) => {
+  const user = actor(req);
+  const inquiry = await inquiries.getInquiry(req.params.id);
+  const involved =
+    inquiry &&
+    (String(inquiry.submittedById) === user.id ||
+      inquiry.projectLeadIds.some((lead) => String((lead as { _id?: unknown })._id ?? lead) === user.id));
+  if (!inquiry || (!canSeeAllSales(user) && !involved)) throw new HttpError(404, "Inquiry not found");
+  return inquiry;
+}));
+studioRouter.post("/inquiries/:id/call", validate(z.object({ callAt: z.string().min(1), notes: z.string().optional() })), send(async (req) => {
+  requireSalesDecider(actor(req));
+  return inquiries.scheduleInquiryCall(req.params.id, req.body.callAt, req.body.notes);
+}));
+studioRouter.post("/inquiries/:id/approve", validate(z.object({ projectLeadIds: z.array(z.string()) })), send(async (req) => {
+  const user = actor(req);
+  requireSalesDecider(user);
+  return inquiries.approveInquiry(req.params.id, user.id, req.body.projectLeadIds);
+}));
+studioRouter.post("/inquiries/:id/start-planning", validate(z.object({ projectLeadIds: z.array(z.string()) })), send(async (req) => {
+  const user = actor(req);
+  requireSalesDecider(user);
+  return inquiries.startProjectPlanning(req.params.id, user.id, req.body.projectLeadIds);
+}));
+studioRouter.post("/inquiries/:id/leads", validate(z.object({ projectLeadIds: z.array(z.string()) })), send(async (req) => {
+  requireSalesDecider(actor(req));
+  return inquiries.assignInquiryLeads(req.params.id, req.body.projectLeadIds);
+}));
+studioRouter.post("/inquiries/:id/decline", validate(z.object({ reason: z.string().min(1) })), send(async (req) => {
+  const user = actor(req);
+  requireSalesDecider(user);
+  const { inquiry, mail } = await inquiries.declineInquiry(req.params.id, user.id, req.body.reason);
+  return { inquiry, reporterNotified: mail.sent };
+}));
+studioRouter.post("/inquiries/:id/convert", send(async (req) => {
+  requireSalesDecider(actor(req));
+  return inquiries.convertInquiryToProject(req.params.id);
+}));
+
 studioRouter.get("/proposals", send(async () => studio.listProposals()));
 studioRouter.post("/proposals", validate(loose), send(async (req) => {
   await studio.createProposal(req.body);
@@ -147,8 +201,66 @@ studioRouter.get("/projects/:id/tasks", send(async (req) => {
   await loadProject(req.params.id, actor(req), "view");
   return tasks.listProjectBoardTasks(req.params.id);
 }));
-studioRouter.post("/projects/:id/tasks", validate(loose), send(async (req) => {
+studioRouter.get("/projects/:id/team", send(async (req) => {
+  await loadProject(req.params.id, actor(req), "view");
+  return projects.getProjectTeam(req.params.id);
+}));
+studioRouter.patch("/projects/:id/setup", validate(loose), send(async (req) => {
   await loadProject(req.params.id, actor(req), "manage");
+  return projects.updateProjectSetup(req.params.id, req.body);
+}));
+studioRouter.patch("/projects/:id/setup/timeline", validate(z.object({
+  startDate: z.string().nullable().optional(),
+  deliveryDate: z.string().nullable().optional(),
+  phases: z.array(z.object({
+    name: z.string(),
+    durationDays: z.number(),
+    ownerId: z.string().nullable().optional(),
+  })),
+})), send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projects.updateProjectTimeline(req.params.id, req.body);
+}));
+studioRouter.patch("/projects/:id/setup/deliverables", validate(z.object({
+  phases: z.array(z.object({ name: z.string(), deliverables: z.string() })),
+})), send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projects.updateProjectSetupDeliverables(req.params.id, req.body);
+}));
+studioRouter.patch("/projects/:id/setup/kickoff", validate(z.object({ kickoffAt: z.string().min(1) })), send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projects.updateProjectKickoff(req.params.id, req.body.kickoffAt);
+}));
+studioRouter.get("/projects/:id/communications", send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projectCommunications.getProjectCommunicationDetails(req.params.id);
+}));
+studioRouter.post("/projects/:id/notify-team", send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projectCommunications.notifyProjectTeam(req.params.id);
+}));
+studioRouter.post("/projects/:id/members", validate(z.object({ userId: z.string() })), send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  await projects.addProjectMember(req.params.id, req.body.userId);
+  return { ok: true };
+}));
+studioRouter.post("/projects/:id/members/remove", validate(z.object({ userId: z.string() })), send(async (req) => {
+  await loadProject(req.params.id, actor(req), "manage");
+  return projects.removeProjectMember(req.params.id, req.body.userId);
+}));
+studioRouter.get("/me/availability", send(async (req) => projects.getOwnAvailability(actor(req))));
+studioRouter.post("/me/availability", validate(z.object({ status: z.string(), note: z.string().optional() })), send(async (req) =>
+  projects.setOwnAvailability(actor(req), req.body.status, req.body.note ?? ""),
+));
+studioRouter.get("/me/profile", send(async (req) => profile.getOwnProfile(actor(req))));
+studioRouter.post("/me/profile", validate(z.object({
+  phone: z.string().max(40),
+  bio: z.string().max(500),
+  profileImage: z.string().max(360_000).optional(),
+})), send(async (req) => profile.updateOwnProfile(actor(req), req.body)));
+studioRouter.post("/projects/:id/tasks", validate(loose), send(async (req) => {
+  const user = actor(req);
+  await loadProject(req.params.id, user, "view");
   return tasks.createProjectTask({ ...req.body, projectId: req.params.id });
 }));
 studioRouter.patch("/tasks/:id", validate(loose), send(async (req) => tasks.updateProjectTask({ ...req.body, taskId: req.params.id })));

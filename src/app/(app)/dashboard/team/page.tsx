@@ -2,9 +2,12 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { PageFallback } from "@/components/banner";
+import { EmployeeAvatar } from "@/components/employee-avatar";
 import { loadDashboardBundle } from "@/components/dashboard/shared";
+import { orEmpty } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { TEST_LANES, TEST_ROSTER } from "@/lib/test-roster";
+import { listPeople } from "@/services/org";
 
 export default function DashboardTeamPage() {
   return (
@@ -17,7 +20,15 @@ export default function DashboardTeamPage() {
 async function TeamView() {
   await connection();
   const user = await getCurrentUser();
-  const { rosterUsers, lanes, tasksByOwner, maxLoad } = await loadDashboardBundle(user);
+  const [{ rosterUsers, lanes, tasksByOwner, maxLoad }, directory] = await Promise.all([
+    loadDashboardBundle(user),
+    orEmpty(() => listPeople(), null),
+  ]);
+  const profileImages = new Map(directory?.people.map((person) => [person.id, person.profileImage]) ?? []);
+  const teamRoster = rosterUsers.map((person) => ({
+    ...person,
+    profileImage: profileImages.get(person._id.toString()) ?? "",
+  }));
 
   return (
     <section>
@@ -28,7 +39,7 @@ async function TeamView() {
           <p>Projects move across lanes. Bars show each person&apos;s open accountable tasks.</p>
         </div>
         <div className="row" style={{ gap: "0.5rem" }}>
-          <span className="badge badge-active">{(rosterUsers.length ? rosterUsers : TEST_ROSTER).length} people</span>
+          <span className="badge badge-active">{(teamRoster.length ? teamRoster : TEST_ROSTER).length} people</span>
           {user.role === "owner" ? (
             <Link href="/teams" className="btn btn-ghost">Manage lanes <span className="arrow">→</span></Link>
           ) : null}
@@ -36,13 +47,14 @@ async function TeamView() {
       </div>
       <div className="lane-grid">
         {(lanes.length ? lanes : TEST_LANES.map((lane) => ({ _id: lane.id, name: lane.name }))).map((lane, i) => {
-          const people = rosterUsers.length
-            ? rosterUsers
+          const people = teamRoster.length
+            ? teamRoster
             : TEST_ROSTER.map((person) => ({
                 _id: person.id,
                 name: person.name,
                 title: person.title ?? "",
                 laneIds: person.laneIds ?? [],
+                profileImage: "",
               }));
           const members = people.filter((u) => {
             const laneIds = "laneIds" in u ? (u.laneIds ?? []) : [];
@@ -60,7 +72,7 @@ async function TeamView() {
                   const load = tasksByOwner.get(m._id.toString()) ?? 0;
                   return (
                     <li key={m._id.toString()} className="person-row">
-                      <span className="avatar sm">{m.name.split(/\s+/).map((x: string) => x[0]).join("").slice(0, 2)}</span>
+                      <EmployeeAvatar name={m.name} profileImage={m.profileImage} size={32} small />
                       <span className="person-meta">
                         <strong>{m.name}</strong>
                         <span>{m.title || "Studio member"}</span>

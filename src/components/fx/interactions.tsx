@@ -15,6 +15,10 @@ const SPOT = ".card, .panel, .form-card, .kpi, .spot, .task-card, .column, .even
 const MAGNET = ".btn-primary, [data-magnetic]";
 const COUNT = "[data-countup], .kpi-value, .stat";
 
+// Streamed (Suspense) content is server HTML until React hydrates it; changing its
+// attributes before then causes a hydration mismatch, so only touch nodes React owns.
+const hydrated = (el: Element) => Object.keys(el).some((k) => k.startsWith("__reactFiber"));
+
 export function Interactions() {
   const pathname = usePathname();
 
@@ -51,7 +55,7 @@ export function Interactions() {
       if (!target || !(target instanceof Element)) return;
 
       const spot = target.closest<HTMLElement>(SPOT);
-      if (spot) {
+      if (spot && hydrated(spot)) {
         const r = spot.getBoundingClientRect();
         spot.style.setProperty("--mx", `${e.clientX - r.left}px`);
         spot.style.setProperty("--my", `${e.clientY - r.top}px`);
@@ -65,7 +69,7 @@ export function Interactions() {
         magnet.style.transform = "";
         magnet = null;
       }
-      if (m) {
+      if (m && hydrated(m)) {
         const r = m.getBoundingClientRect();
         const dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
         const dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
@@ -97,7 +101,6 @@ export function Interactions() {
 
     // Streamed (Suspense) content is server HTML until React hydrates it; touching
     // its text before then causes a hydration mismatch, so wait for React to own it.
-    const hydrated = (el: Element) => Object.keys(el).some((k) => k.startsWith("__reactFiber"));
     const animate = (el: Element, tries = 0) => {
       if (!el.isConnected) return;
       if (!hydrated(el)) {

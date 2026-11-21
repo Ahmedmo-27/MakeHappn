@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="page page-wide">
       <header className="page-header">
         <div>
-          <p className="kicker">Command center · {formatDate(now)}</p>
+          <p className="kicker">Founder dashboard · {formatDate(now)}</p>
           <h1>
             {greeting}, <span className="accent-text">{user.name.split(" ")[0]}.</span>
           </h1>

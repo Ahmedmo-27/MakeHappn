@@ -4,7 +4,9 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import {
   PROJECT_STAGES,
+  PROJECT_SETUP_PHASES,
   NON_BYPASSABLE_STAGES,
+  isAvailabilityStatus,
   type ProjectStage,
   type ProjectStatus,
   type StudioProduct,
@@ -38,6 +40,7 @@ export type CreateProjectInput = {
   bypassedStages?: ProjectStage[];
   estimatedTotalCost?: number;
   teamUserIds?: string[];
+  scopeItems?: string[];
 };
 
 export async function generateProjectCode(year: number = new Date().getFullYear()): Promise<string> {
@@ -100,6 +103,7 @@ export async function createProject(input: CreateProjectInput): Promise<IProject
     health: "on_track",
     brief: input.brief?.trim() ?? "",
     objectives: input.objectives?.trim() ?? "",
+    scopeItems: input.scopeItems ?? [],
     audience: input.audience?.trim() ?? "",
     location: input.location?.trim() ?? "",
     startDate: input.startDate ?? null,
@@ -214,6 +218,209 @@ export async function updateProject(projectId: string, input: UpdateProjectInput
   return project;
 }
 
+/** Overview & Scope tab: brief, creative lead, and the selected scope items. */
+export async function updateProjectSetup(
+  projectId: string,
+  input: {
+    brief?: string;
+    creativeLeadId?: string | null;
+    scopeItems?: string[];
+  },
+) {
+  await connectDB();
+  if (input.creativeLeadId && !Types.ObjectId.isValid(input.creativeLeadId)) {
+    throw new Error("Choose a valid creative lead");
+  }
+
+  const update: Record<string, unknown> = {
+    brief: input.brief?.trim() ?? "",
+    creativeLeadId: input.creativeLeadId ? new Types.ObjectId(input.creativeLeadId) : null,
+    scopeItems: [...new Set(input.scopeItems ?? [])],
+  };
+  const project = await Project.findByIdAndUpdate(projectId, { $set: update }, { returnDocument: "after" });
+  if (!project) throw new Error("Project not found");
+  return project;
+}
+
+export async function updateProjectTimeline(
+  projectId: string,
+  input: {
+    startDate?: string | null;
+    deliveryDate?: string | null;
+    phases: Array<{ name: string; durationDays: number; ownerId?: string | null }>;
+  },
+) {
+  await connectDB();
+  const start = input.startDate ? new Date(input.startDate) : null;
+  const delivery = input.deliveryDate ? new Date(input.deliveryDate) : null;
+  if (!start || !delivery) throw new Error("Set both the project start date and delivery date");
+  if ((start && Number.isNaN(start.getTime())) || (delivery && Number.isNaN(delivery.getTime()))) {
+    throw new Error("Enter valid dates");
+  }
+  if (start && delivery && delivery < start) throw new Error("Delivery date can't be before the start date");
+  if (input.phases.length !== PROJECT_SETUP_PHASES.length) throw new Error("All project phases are required");
+
+  const project = await Project.findById(projectId).select("teamUserIds projectLeadId setupPhases").lean();
+  if (!project) throw new Error("Project not found");
+  const eligibleOwners = new Set([String(project.projectLeadId), ...project.teamUserIds.map(String)]);
+  const existingPhases = new Map((project.setupPhases ?? []).map((phase) => [phase.name, phase]));
+  const phases = input.phases.map((phase, index) => {
+    if (phase.name !== PROJECT_SETUP_PHASES[index]) throw new Error("Project phases can't be changed");
+    if (!Number.isInteger(phase.durationDays) || phase.durationDays < 0 || phase.durationDays > 3650) {
+      throw new Error(`Enter a valid duration for ${phase.name}`);
+    }
+    if (phase.ownerId && (!Types.ObjectId.isValid(phase.ownerId) || !eligibleOwners.has(phase.ownerId))) {
+      throw new Error(`Choose a project member to own ${phase.name}`);
+    }
+    const saved = existingPhases.get(phase.name);
+    return {
+      name: phase.name,
+      durationDays: phase.durationDays,
+      ownerId: phase.ownerId ? new Types.ObjectId(phase.ownerId) : null,
+      deliverables: saved?.deliverables ?? "",
+    };
+  });
+
+  const updated = await Project.findByIdAndUpdate(
+    projectId,
+    { $set: { startDate: start, deliveryDate: delivery, setupPhases: phases } },
+    { returnDocument: "after", runValidators: true },
+  );
+  if (!updated) throw new Error("Project not found");
+  return updated;
+}
+
+export async function updateProjectSetupDeliverables(
+  projectId: string,
+  input: { phases: Array<{ name: string; deliverables: string }> },
+) {
+  await connectDB();
+  if (input.phases.length !== PROJECT_SETUP_PHASES.length) throw new Error("All project phases are required");
+  const project = await Project.findById(projectId).select("setupPhases").lean();
+  if (!project) throw new Error("Project not found");
+  const existing = new Map((project.setupPhases ?? []).map((phase) => [phase.name, phase]));
+  const phases = input.phases.map((phase, index) => {
+    if (phase.name !== PROJECT_SETUP_PHASES[index]) throw new Error("Project phases can't be changed");
+    const saved = existing.get(phase.name);
+    return {
+      name: phase.name,
+      durationDays: saved?.durationDays ?? 0,
+      ownerId: saved?.ownerId ?? null,
+      deliverables: phase.deliverables.trim().slice(0, 5000),
+    };
+  });
+  const updated = await Project.findByIdAndUpdate(
+    projectId,
+    { $set: { setupPhases: phases } },
+    { returnDocument: "after", runValidators: true },
+  );
+  if (!updated) throw new Error("Project not found");
+  return updated;
+}
+
+export async function updateProjectKickoff(projectId: string, kickoffAt: string) {
+  await connectDB();
+  const date = new Date(kickoffAt);
+  if (Number.isNaN(date.getTime())) throw new Error("Choose a valid kick-off date and time");
+  const project = await Project.findByIdAndUpdate(
+    projectId,
+    { $set: { kickoffAt: date } },
+    { returnDocument: "after", runValidators: true },
+  );
+  if (!project) throw new Error("Project not found");
+  return project;
+}
+
+/** Team tab: everyone on the project with their title and availability, plus people who can still be added. */
+export async function getProjectTeam(projectId: string) {
+  await connectDB();
+  const project = await Project.findById(projectId).select("projectLeadId teamUserIds").lean();
+  if (!project) throw new Error("Project not found");
+
+  const users = await User.find({ isActive: { $ne: false }, isVacant: { $ne: true } })
+    .select("name title availability availabilityNote availabilityUpdatedAt +profileImage")
+    .sort({ name: 1 })
+    .lean();
+  const leadId = String(project.projectLeadId);
+  const memberIds = new Set([leadId, ...project.teamUserIds.map(String)]);
+  const view = (u: (typeof users)[number]) => ({
+    id: String(u._id),
+    name: u.name,
+    title: u.title ?? "",
+    profileImage: u.profileImage ?? "",
+    availability: u.availability ?? "available",
+    availabilityNote: u.availabilityNote ?? "",
+    availabilityUpdatedAt: u.availabilityUpdatedAt ? u.availabilityUpdatedAt.toISOString() : null,
+    isLead: String(u._id) === leadId,
+  });
+
+  const members = users
+    .filter((u) => memberIds.has(String(u._id)))
+    .map(view)
+    .sort((a, b) => Number(b.isLead) - Number(a.isLead));
+  const candidates = users.filter((u) => !memberIds.has(String(u._id))).map(view);
+  return { members, candidates };
+}
+
+export async function addProjectMember(projectId: string, userId: string) {
+  await connectDB();
+  if (!Types.ObjectId.isValid(userId)) throw new Error("Choose a team member");
+  if (!(await User.exists({ _id: userId, isActive: { $ne: false }, isVacant: { $ne: true } }))) {
+    throw new Error("That person is no longer available to add");
+  }
+  const project = await Project.findByIdAndUpdate(
+    projectId,
+    { $addToSet: { teamUserIds: new Types.ObjectId(userId) } },
+    { returnDocument: "after" },
+  );
+  if (!project) throw new Error("Project not found");
+  return project;
+}
+
+export async function removeProjectMember(projectId: string, userId: string) {
+  await connectDB();
+  const project = await Project.findById(projectId).select("projectLeadId");
+  if (!project) throw new Error("Project not found");
+  if (String(project.projectLeadId) === userId) throw new Error("The project lead can't be removed from the team");
+  await Project.updateOne({ _id: projectId }, { $pull: { teamUserIds: new Types.ObjectId(userId) } });
+  return { ok: true };
+}
+
+/** A person updates their own status. Test roster accounts are matched by email. */
+export async function setOwnAvailability(
+  actor: { id: string; email: string },
+  status: string,
+  note: string,
+) {
+  await connectDB();
+  if (!isAvailabilityStatus(status)) throw new Error("Choose a valid status");
+  const match: Record<string, unknown>[] = [];
+  if (Types.ObjectId.isValid(actor.id)) match.push({ _id: new Types.ObjectId(actor.id) });
+  if (actor.email) match.push({ email: actor.email.toLowerCase() });
+  const user = await User.findOneAndUpdate(
+    { $or: match },
+    {
+      $set: {
+        availability: status,
+        availabilityNote: status === "available" ? "" : note.trim().slice(0, 120),
+        availabilityUpdatedAt: new Date(),
+      },
+    },
+    { returnDocument: "after" },
+  );
+  if (!user) throw new Error("Your profile could not be found");
+  return { availability: user.availability, availabilityNote: user.availabilityNote };
+}
+
+export async function getOwnAvailability(actor: { id: string; email: string }) {
+  await connectDB();
+  const match: Record<string, unknown>[] = [];
+  if (Types.ObjectId.isValid(actor.id)) match.push({ _id: new Types.ObjectId(actor.id) });
+  if (actor.email) match.push({ email: actor.email.toLowerCase() });
+  const user = await User.findOne({ $or: match }).select("availability availabilityNote").lean();
+  return { availability: user?.availability ?? "available", availabilityNote: user?.availabilityNote ?? "" };
+}
+
 export async function getProjectById(id: string) {
   await connectDB();
   if (!Types.ObjectId.isValid(id)) return null;
@@ -221,6 +428,7 @@ export async function getProjectById(id: string) {
   return Project.findById(id)
     .populate("clientId", "name brandName contacts billingAddress")
     .populate("projectLeadId", "name email title role functionalRoles")
+    .populate("creativeLeadId", "name title")
     .populate("teamUserIds", "name email title role laneIds functionalRoles")
     .lean();
 }

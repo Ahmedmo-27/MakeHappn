@@ -195,6 +195,7 @@ export function testPeopleView() {
       email: person.email,
       role: person.role,
       title: person.title ?? "",
+      profileImage: "",
       functionalRoles: person.functionalRoles ?? [],
       jobDescription: "",
       weeklyCapacityHours: 40,
